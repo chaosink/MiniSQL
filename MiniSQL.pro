@@ -9,7 +9,9 @@ SOURCES += main.cpp \
     catalog_manager.cpp \
     record_manager.cpp \
     index_manager.cpp \
-    buffer_manager.cpp
+    buffer_manager.cpp \
+    dbms.cpp \
+    exception.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -20,5 +22,7 @@ HEADERS += \
     catalog_manager.h \
     record_manager.h \
     index_manager.h \
-    buffer_manager.h
+    buffer_manager.h \
+    dbms.h \
+    exception.h
 

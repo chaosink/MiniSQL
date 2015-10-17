@@ -10,3 +10,12 @@ IndexManager::~IndexManager()
 
 }
 
+void IndexManager::Init()
+{
+
+}
+
+void IndexManager::Terminate()
+{
+
+}

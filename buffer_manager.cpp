@@ -10,3 +10,17 @@ BufferManager::~BufferManager()
 
 }
 
+void BufferManager::Init()
+{
+
+}
+
+void BufferManager::Init(int block_num)
+{
+
+}
+
+void BufferManager::Terminate()
+{
+
+}

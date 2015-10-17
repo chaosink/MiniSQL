@@ -10,3 +10,12 @@ RecordManager::~RecordManager()
 
 }
 
+void RecordManager::Init()
+{
+
+}
+
+void RecordManager::Terminate()
+{
+
+}

@@ -7,6 +7,8 @@ class CatalogManager
 public:
     CatalogManager();
     ~CatalogManager();
+    void Init();
+    void Terminate();
 };
 
 #endif // CATALOGMANAGER_H

@@ -1,13 +1,19 @@
-#include <iostream>
-
-using namespace std;
+#include "dbms.h"
 
 int main()
 {
-    int i;
-    cin >> i;
-    cout << i << endl;
-    cout << "Hello World!" << endl;
+    DBMS dbms;
+
+    try
+    {
+        dbms.Init();
+        dbms.Run();
+        dbms.Terminate();
+    }
+    catch(Exception exception)
+    {
+        dbms.Print(exception.message());
+    }
+
     return 0;
 }
-

@@ -10,3 +10,12 @@ API::~API()
 
 }
 
+void API::Init()
+{
+
+}
+
+void API::Terminate()
+{
+
+}

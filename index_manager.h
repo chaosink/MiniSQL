@@ -7,6 +7,8 @@ class IndexManager
 public:
     IndexManager();
     ~IndexManager();
+    void Init();
+    void Terminate();
 };
 
 #endif // INDEXMANAGER_H

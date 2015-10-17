@@ -7,6 +7,8 @@ class API
 public:
     API();
     ~API();
+    void Init();
+    void Terminate();
 };
 
 #endif // API_H

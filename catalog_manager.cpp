@@ -10,3 +10,12 @@ CatalogManager::~CatalogManager()
 
 }
 
+void CatalogManager::Init()
+{
+
+}
+
+void CatalogManager::Terminate()
+{
+
+}
