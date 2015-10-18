@@ -37,7 +37,6 @@ void Interpreter::Run()
                 is_quit_ = true;
             if(command_part[command_part.length() - 1] == ';')
             {
-                command.erase()
                 cout << command << endl;
                 command = "";
                 is_command = true;
