@@ -7,8 +7,8 @@ using namespace std;
 Interpreter::Interpreter()
 {
     is_quit_ = false;
-    PROMPT = "MiniSQL> ";
-    PROMPT_PART = "      -> ";
+    PROMPT = _PROMPT;
+    PROMPT_PART = _PROMPT_PART;
 }
 
 Interpreter::~Interpreter()

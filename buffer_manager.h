@@ -1,16 +1,17 @@
 #ifndef BUFFERMANAGER_H
 #define BUFFERMANAGER_H
 
-#define BUFFER_SIZE 4096
+#define BLOCK_SIZE 4096
+#define DEFAULT_BLOCK_NUM 10
 
-class Buffer
+class BufferTable
 {
-    char content_[BUFFER_SIZE];
+
 };
 
 class BufferManager
 {
-    char buffer_[];
+    void *buffer_;
 public:
     BufferManager();
     ~BufferManager();

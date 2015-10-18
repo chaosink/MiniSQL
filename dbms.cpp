@@ -11,11 +11,7 @@ using namespace std;
 
 DBMS::DBMS()
 {
-    DBMS_INFORMATION = "\
-Welcome to MiniSQL!\n\
-Version: 0.1\n\
-\n\
-";
+    DBMS_INFORMATION = _DBMS_INFORMATION;
 }
 
 DBMS::~DBMS()

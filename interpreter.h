@@ -4,6 +4,9 @@
 #include <string>
 using namespace std;
 
+#define _PROMPT "MiniSQL> "
+#define _PROMPT_PART "      -> "
+
 class Interpreter
 {
     const char *PROMPT;

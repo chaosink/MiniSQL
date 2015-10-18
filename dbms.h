@@ -11,7 +11,7 @@
 #include "buffer_manager.h"
 using namespace std;
 
-
+#define _DBMS_INFORMATION "Welcome to MiniSQL!\nVersion: 0.1\n\n"
 
 class DBMS
 {
