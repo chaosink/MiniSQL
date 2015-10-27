@@ -4,16 +4,8 @@ int main()
 {
     DBMS dbms;
 
-    try
-    {
-        dbms.Init();
-        dbms.Run();
-        dbms.Terminate();
-    }
-    catch(Exception exception)
-    {
-        dbms.Print(exception.message());
-    }
-
+    dbms.Init();
+    dbms.Run();
+    dbms.Terminate();
     return 0;
 }

@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include <string>
+#include "query.h"
 using namespace std;
 
 #define _PROMPT "MiniSQL> "
@@ -17,6 +18,7 @@ public:
     ~Interpreter();
     void Init();
     void Run();
+    Query *Parse(string command);
     void Terminate();
     void Print(string information);
 };

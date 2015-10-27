@@ -6,7 +6,6 @@
 #include "index_manager.h"
 #include "catalog_manager.h"
 #include "buffer_manager.h"
-#include "exception.h"
 using namespace std;
 
 DBMS::DBMS()

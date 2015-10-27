@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include "interpreter.h"
-#include "exception.h"
+#include "query.h"
 using namespace std;
 
 Interpreter::Interpreter()
@@ -37,7 +37,7 @@ void Interpreter::Run()
                 is_quit_ = true;
             if(command_part[command_part.length() - 1] == ';')
             {
-                cout << command << endl;
+                Parse(command);
                 command = "";
                 is_command = true;
             }
@@ -57,4 +57,24 @@ void Interpreter::Terminate()
 void Interpreter::Print(string information)
 {
     cout << information;
+}
+
+Query * Interpreter::Parse(string command)
+{
+    int start = command.find_first_not_of(' ');
+    int end = command.find_first_of(' ', start);
+    string command_type = command.substr(start, end - start);
+    if(command_type == "create") {
+        start = command.find_first_not_of(' ', end);
+        end = command.find_first_of(' ', start);
+        command_type = command.substr(start, end - start);
+        if(command_type == "table") {
+            start = command.find_first_not_of(' ', end);
+            end = command.find_first_of(';', start);
+            string table_name = command.substr(start, end - start);
+            QueryCreateTable query;
+            query.table_name = table_name;
+            return &query;
+        }
+    }
 }
