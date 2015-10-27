@@ -2,7 +2,6 @@
 #define DBMS_H
 
 #include <string>
-#include "exception.h"
 #include "interpreter.h"
 #include "api.h"
 #include "record_manager.h"
