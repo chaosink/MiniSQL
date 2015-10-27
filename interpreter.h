@@ -19,6 +19,8 @@ public:
     void Run();
     void Terminate();
     void Print(string information);
+    bool Grammar(string str);
+    void delete_space(string str);
 };
 
 #endif // INTERPRETER_H
