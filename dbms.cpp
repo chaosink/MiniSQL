@@ -20,12 +20,12 @@ DBMS::~DBMS()
 
 void DBMS::Init()
 {
-    interpreter_.Init();
-    api_.Init();
-    record_manager_.Init();
-    index_manager_.Init();
-    catalog_manager_.Init();
     buffer_manager_.Init();
+    catalog_manager_.Init();
+    index_manager_.Init();
+    record_manager_.Init();
+    api_.Init();
+    interpreter_.Init(&api_);
 }
 
 void DBMS::Run()

@@ -2,6 +2,7 @@
 #include <string>
 #include "interpreter.h"
 #include "query.h"
+#include "api.h"
 using namespace std;
 
 Interpreter::Interpreter()
@@ -16,9 +17,9 @@ Interpreter::~Interpreter()
 
 }
 
-void Interpreter::Init()
+void Interpreter::Init(API *api)
 {
-
+    api_ = api;
 }
 
 void Interpreter::Run()
@@ -33,7 +34,7 @@ void Interpreter::Run()
         {
             getline(cin, command_part);
             command += command_part;
-            if(command.compare("quit;") == 0)
+            if(command == "quit;")
                 is_quit_ = true;
             if(command_part[command_part.length() - 1] == ';')
             {
@@ -41,9 +42,10 @@ void Interpreter::Run()
              //   {
               //      command.erase(0,1);
             //    }
-                cout << command << endl;
              //  Grammar(command);
-                Parse(command);
+                cout << command << endl;
+                Query *query = Parse(command);
+                api_->ProcessQuery(query);
                 command = "";
                 is_command = true;
             }
@@ -55,13 +57,13 @@ void Interpreter::Run()
     }
 }
 
-
+/*
 bool Interpreter::Grammar(string str)
 {
      int n= str.find(' ',0);
      string s1=str.substr(0,n);
      str.erase(0,n+1);
-     if (s1== 'insert')
+     if (s1 == "insert")
      {
          while (str[0]==' '){
                 str.erase(0,1);
@@ -96,7 +98,7 @@ bool Interpreter::Grammar(string str)
          string s2=
      }
 
-}
+}*/
 
 void Interpreter::Terminate()
 {
@@ -121,9 +123,10 @@ Query * Interpreter::Parse(string command)
             start = command.find_first_not_of(' ', end);
             end = command.find_first_of(';', start);
             string table_name = command.substr(start, end - start);
-            QueryCreateTable query;
-            query.table_name = table_name;
-            return &query;
+            QueryCreateTable *query = new QueryCreateTable;
+            query->table_name = table_name;
+            return query;
         }
     }
+    return NULL;
 }

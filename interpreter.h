@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include <string>
+#include "api.h"
 #include "query.h"
 using namespace std;
 
@@ -13,10 +14,11 @@ class Interpreter
     const char *PROMPT;
     const char *PROMPT_PART;
     bool is_quit_;
+    API *api_;
 public:
     Interpreter();
     ~Interpreter();
-    void Init();
+    void Init(API *api);
     void Run();
     Query *Parse(string command);
     void Terminate();
