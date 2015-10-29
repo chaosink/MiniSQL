@@ -23,7 +23,6 @@ public:
     Query *Parse(string command);
     void Terminate();
     void Print(string information);
-    bool Grammar(string str);
     void delete_space(string str);
 };
 

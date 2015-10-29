@@ -52,49 +52,6 @@ void Interpreter::Run()
     }
 }
 
-/*
-bool Interpreter::Grammar(string str)
-{
-     int n= str.find(' ',0);
-     string s1=str.substr(0,n);
-     str.erase(0,n+1);
-     if (s1 == "insert")
-     {
-         while (str[0]==' '){
-                str.erase(0,1);
-         }
-         n=str.find(' ',0);
-         string s2=str.substr(0,n);
-         if (s2!='into') return false;
-                 else
-         {
-                   str.erase(0,n+1);
-                    string s3=str.substr(0,str.find(' ',0));
-                    str.erase(0,str.find(' ',0)+1);
-                    n=str.find('(',0);
-                    string s4=str.substr(0,n);
-                    while (s4[s4.length()-1]==' ')
-                        s4.erase(s4.length()-1,1);
-                    if (s4!='value') return false;
-                    str.erase(0,n+1);
-                    str.erase(str.end());
-                    while (str[str.length()-1]!=')')
-                    {
-                        str.erase(str.end());
-                    }
-                    str.erase(str.end());
-          }
-     }
-     else if (s1=='create')
-     {
-         str.erase(0,n+1);
-         delete_space(str);
-         n=str.find(' ',0);
-         string s2=
-     }
-
-}*/
-
 void Interpreter::Terminate()
 {
 
