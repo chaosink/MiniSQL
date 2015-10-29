@@ -50,7 +50,7 @@ void CatalogManager::DropCatalog(string table_name)
     remove((table_name + ".log").c_str());
 }
 
-TableInfo *CatalogManager::GetTalbeInfo(string table_name)
+TableInfo *CatalogManager::GetTableInfo(string table_name)
 {
     TableInfo *table_info = new TableInfo;
     ifstream input((table_name + ".log").c_str());

@@ -53,19 +53,22 @@ void API::ProcessQuery(Query *query)
         }
         case SELECT: {
             QuerySelect *q = (QuerySelect *)query;
-            TableInfo *table_info = catalog_manager_->GetTalbeInfo(q->table_name);
+            TableInfo *table_info = catalog_manager_->GetTableInfo(q->table_name);
             record_manager_->SelectRecord(table_info, q);
             break;
         }
         case INSERT: {
             QueryInsert *q = (QueryInsert *)query;
-            TableInfo *table_info = catalog_manager_->GetTalbeInfo(q->table_name);
+            TableInfo *table_info = catalog_manager_->GetTableInfo(q->table_name);
             record_manager_->InsertRecord(table_info, q);
             catalog_manager_->UpdateCatalog(table_info);
             break;
         }
         case DELETE: {
             QueryDelete *q = (QueryDelete *)query;
+            TableInfo *table_info = catalog_manager_->GetTableInfo(q->table_name);
+            record_manager_->DeleteRecord(table_info, q);
+            catalog_manager_->UpdateCatalog(table_info);
             break;
         }
     }

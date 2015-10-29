@@ -16,7 +16,7 @@ public:
     void UpdateCatalog(TableInfo *table_info);
     void DropCatalog(string table_name);
     void Terminate();
-    TableInfo *GetTalbeInfo(string table_name);
+    TableInfo *GetTableInfo(string table_name);
 };
 
 #endif // CATALOGMANAGER_H

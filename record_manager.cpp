@@ -50,23 +50,30 @@ void RecordManager::AddOneBlock(string table_name)
 void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query)
 {
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
-    int table_block_num = table_info->block_num - 1;
     if(table_info->block_num * table_info->record_num_per_block == table_info->record_num) {
-        table_block_num++;
         AddOneBlock(table_info->table_name);
+        char *block = buffer_manager_->GetTableBlock(table_info->table_name, table_info->block_num);
         table_info->block_num++;
+        WriteRecord(table_info->attribute_info, query->attribute_value, block);
+        table_info->record_num++;
+        return;
     }
-    char *block = buffer_manager_->GetTableBlock(table_info->table_name, table_block_num);
-    int record_num = table_info->record_num % table_info->record_num_per_block;
-    WriteRecord(table_info->attribute_info, query->attribute_value, block + record_num * table_info->record_size);
-    table_info->record_num++;
+    for(int i = 0; i < table_info->block_num; i++) {
+        char *block = buffer_manager_->GetTableBlock(table_info->table_name, i);
+        for(int j = 0; j < table_info->record_num_per_block; j++)
+            if(!block[j * table_info->record_size]) {
+                WriteRecord(table_info->attribute_info, query->attribute_value, block + j * table_info->record_size);
+                table_info->record_num++;
+                return;
+            }
+    }
 }
 
 void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string> &attr_value, char *address)
 {
-    *address = 0;
+    *address = 1;
     address++;
-    for(int i = 0; i < (int)attr_info.size() ; i++) {
+    for(int i = 0; i < (int)attr_info.size() ; i++)
         switch(attr_info[i].type) {
             case CHAR:
                 //cout << attr_value[i] << " ";
@@ -85,7 +92,6 @@ void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string>
                 address += 4;
                 break;
         }
-    }
     //cout << endl;
 }
 
@@ -118,6 +124,7 @@ bool SatisfyTemplate(T a, T b, ComparisonType comparison)
             else return false;
             break;
     }
+    return false;
 }
 
 bool Satisfy(AttributeType &type, string &attr_value, Where &where) {
@@ -135,12 +142,13 @@ bool Satisfy(AttributeType &type, string &attr_value, Where &where) {
         float b = atof(where.attribute_value.c_str());
         return SatisfyTemplate(a, b, where.comparison);
     }
+    return false;
 }
 
 bool SatisfyWhere(vector<AttributeInfo> &attr_info, vector<string> &attr_value, vector<Where> &where) {
-    for(int i = 0; i < where.size(); i++) {
+    for(int i = 0; i < (int)where.size(); i++) {
         int attr_num;
-        for(attr_num = 0; attr_num < attr_info.size(); attr_num++)
+        for(attr_num = 0; attr_num < (int)attr_info.size(); attr_num++)
             if(where[i].attribute_name == attr_info[attr_num].name) break;
         if(!Satisfy(attr_info[attr_num].type, attr_value[attr_num], where[i])) return false;
     }
@@ -152,19 +160,17 @@ void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query)
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetTableBlock(table_info->table_name, i);
-        int record_num;
-        if(i != table_info->block_num - 1) record_num = table_info->record_num_per_block;
-        else record_num = (table_info->record_num - 1) % table_info->record_num_per_block + 1;
-        for(int j = 0; j < record_num; j++) {
-            vector<string> attribute_value;
-            ReadRecord(table_info->attribute_info, attribute_value, block + j * table_info->record_size);
-            if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
-                for(int i = 0; i < attribute_value.size(); i++) {
-                    cout << attribute_value[i] << " ";
+        for(int j = 0; j < table_info->record_num_per_block; j++)
+            if(block[j * table_info->record_size]) {
+                vector<string> attribute_value;
+                ReadRecord(table_info->attribute_info, attribute_value, block + j * table_info->record_size);
+                if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
+                    for(int i = 0; i < (int)attribute_value.size(); i++) {
+                        cout << attribute_value[i] << " ";
+                    }
+                    cout << endl;
                 }
-                cout << endl;
             }
-        }
     }
 }
 
@@ -178,7 +184,7 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
                 memcpy(s, address, attr_info[i].char_length);
                 string str(s);
                 attr_value.push_back(str);
-                //cout << attr_info[i].type << " " << str << " ";
+                //cout << str << " ";
                 address += attr_info[i].char_length;
                 break;
             }
@@ -187,7 +193,7 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
                 sprintf(s, "%d", *((int *)address));
                 string str(s);
                 attr_value.push_back(str);
-                //cout << attr_info[i].type << "! " << str << " ";
+                //cout  << str << " ";
                 address += 4;
                 break;
             }
@@ -196,7 +202,7 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
                 sprintf(s, "%f", *((float *)address));
                 string str(s);
                 attr_value.push_back(str);
-                //cout << attr_info[i].type << "! " << str << " ";
+                //cout << str << " ";
                 address += 4;
                 break;
             }
@@ -205,7 +211,18 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
     //cout << endl;
 }
 
-void RecordManager::DeleteRecord()
+void RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query)
 {
-
+    for(int i = 0; i < table_info->block_num; i++) {
+        char *block = buffer_manager_->GetTableBlock(table_info->table_name, i);
+        for(int j = 0; j < table_info->record_num_per_block; j++)
+            if(block[j * table_info->record_size]) {
+                vector<string> attribute_value;
+                ReadRecord(table_info->attribute_info, attribute_value, block + j * table_info->record_size);
+                if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
+                    block[j * table_info->record_size] = 0;
+                    table_info->record_num--;
+                }
+            }
+    }
 }

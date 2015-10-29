@@ -64,7 +64,7 @@ void Interpreter::Print(string information)
 
 void ReplaceParenthesesWithSpace(string *str)
 {
-    int found = str->find_first_of("()");;
+    int found = str->find_first_of("()");
     while (found != -1)
     {
         (*str)[found]=' ';
@@ -111,6 +111,7 @@ void ParseAttribute(QueryCreateTable *query, string attr_str)
 Query *Interpreter::Parse(string command)
 {
     int start = command.find_first_not_of(' ');
+    if(start == -1) return NULL;
     int end = command.find_first_of(" ;", start);
     string command_type = command.substr(start, end - start);
     if(command_type == "create") {
