@@ -10,9 +10,9 @@ IndexManager::~IndexManager()
 
 }
 
-void IndexManager::Init()
+void IndexManager::Init(BufferManager *buffer_manager)
 {
-
+    buffer_manager_ = buffer_manager;
 }
 
 void IndexManager::Terminate()

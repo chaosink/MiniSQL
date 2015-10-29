@@ -1,4 +1,5 @@
 #include <string>
+#include <iostream>
 #include "dbms.h"
 #include "interpreter.h"
 #include "api.h"
@@ -21,10 +22,10 @@ DBMS::~DBMS()
 void DBMS::Init()
 {
     buffer_manager_.Init();
-    catalog_manager_.Init();
-    index_manager_.Init();
-    record_manager_.Init();
-    api_.Init();
+    catalog_manager_.Init(&buffer_manager_);
+    index_manager_.Init(&buffer_manager_);
+    record_manager_.Init(&buffer_manager_);
+    api_.Init(&record_manager_, &index_manager_, &catalog_manager_);
     interpreter_.Init(&api_);
 }
 

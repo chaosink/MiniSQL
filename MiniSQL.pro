@@ -23,5 +23,6 @@ HEADERS += \
     index_manager.h \
     buffer_manager.h \
     dbms.h \
-    query.h
+    query.h \
+    table.h
 
