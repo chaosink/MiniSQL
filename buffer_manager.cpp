@@ -82,6 +82,13 @@ void BufferManager::WriteTableBlock(string table_name, int table_block_num, int 
     output.close();
 }
 
+void BufferManager::DeleteTableBlock(string table_name)
+{
+    for(int i = 0; i < block_num_; i++)
+        if(buffer_block_info_[i].table_name == table_name)
+            buffer_block_info_[i].table_name.clear();
+}
+
 void BufferManager::Terminate()
 {
     for(int i = 0; i < block_num_; i++) {

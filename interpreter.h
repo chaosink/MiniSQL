@@ -9,6 +9,11 @@ using namespace std;
 #define _PROMPT "MiniSQL> "
 #define _PROMPT_PART "      -> "
 
+struct ParseResult {
+    bool is_failed;
+    string message;
+};
+
 class Interpreter
 {
     const char *PROMPT;
@@ -20,7 +25,8 @@ public:
     ~Interpreter();
     void Init(API *api);
     void Run();
-    Query *Parse(string command);
+    void RunWithInputStream(bool is_cmd, istream &is);
+    Query *ParseQuery(string command, ParseResult *parse_result);
     void Terminate();
     void Print(string information);
     void delete_space(string str);

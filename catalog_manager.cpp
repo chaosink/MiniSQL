@@ -52,13 +52,16 @@ void CatalogManager::DropCatalog(string table_name)
 
 TableInfo *CatalogManager::GetTableInfo(string table_name)
 {
+    ifstream ifs((table_name + ".log").c_str());
+    if(!ifs.is_open()) {
+        return NULL;
+    }
     TableInfo *table_info = new TableInfo;
-    ifstream input((table_name + ".log").c_str());
-    input >> table_info->table_name >> table_info->attribute_num >> table_info->record_num >> table_info->primary_key >> table_info->record_num_per_block >> table_info->record_size >> table_info->block_num;
+    ifs >> table_info->table_name >> table_info->attribute_num >> table_info->record_num >> table_info->primary_key >> table_info->record_num_per_block >> table_info->record_size >> table_info->block_num;
     for(int i = 0; i < table_info->attribute_num; i++) {
         AttributeInfo attr_info;
         int type;
-        input >> attr_info.name >> type >> attr_info.char_length >> attr_info.is_unique;
+        ifs >> attr_info.name >> type >> attr_info.char_length >> attr_info.is_unique;
         if(type == 0) attr_info.type = CHAR;
         else if(type == 1) attr_info.type = INT;
         else if(type == 2) attr_info.type = FLOAT;

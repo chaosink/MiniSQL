@@ -5,7 +5,7 @@
 #include <string>
 using namespace std;
 
-enum CommandType {CREATE_TABLE, DROP_TABLE, CREATE_INDEX, DROP_INDEX, SELECT, INSERT, DELETE};
+enum QueryType {CREATE_TABLE, DROP_TABLE, CREATE_INDEX, DROP_INDEX, SELECT, INSERT, DELETE};
 enum AttributeType {CHAR, INT, FLOAT};
 enum ComparisonType {EQUAL, NOT_EQUAL, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL};
 
@@ -26,7 +26,7 @@ struct Where
 
 struct Query
 {
-	CommandType command;
+	QueryType type;
 };
 
 struct QueryCreateTable : Query
@@ -36,7 +36,7 @@ struct QueryCreateTable : Query
 	string primary_key;
     QueryCreateTable()
     {
-    	command = CREATE_TABLE;
+    	type = CREATE_TABLE;
     }
 };
 
@@ -45,7 +45,7 @@ struct QueryDropTable : Query
     string table_name;
     QueryDropTable()
     {
-    	command = DROP_TABLE;
+    	type = DROP_TABLE;
     }
 };
 
@@ -56,7 +56,7 @@ struct QueryCreateIndex : Query
     string attribute_name;
     QueryCreateIndex()
     {
-        command = CREATE_INDEX;
+        type = CREATE_INDEX;
     }
 };
 
@@ -65,7 +65,7 @@ struct QueryDropIndex : Query
     string index_name;
     QueryDropIndex()
     {
-    	command = DROP_INDEX;
+    	type = DROP_INDEX;
     }
 };
 
@@ -76,7 +76,7 @@ struct QuerySelect : Query
     vector<Where> where;
     QuerySelect()
     {
-    	command = SELECT;
+    	type = SELECT;
     }
 };
 
@@ -86,7 +86,7 @@ struct QueryInsert : Query
     vector<string> attribute_value;
     QueryInsert()
     {
-		command = INSERT;    	
+		type = INSERT;    	
     }
 };
 
@@ -96,7 +96,7 @@ struct QueryDelete : Query
     vector<Where> where;
     QueryDelete()
     {
-    	command = DELETE;
+    	type = DELETE;
     }
 };
 

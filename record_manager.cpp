@@ -7,6 +7,7 @@
 #include "record_manager.h"
 #include "query.h"
 #include "table.h"
+#include "result.h"
 using namespace std;
 
 RecordManager::RecordManager()
@@ -29,15 +30,30 @@ void RecordManager::Terminate()
 
 }
 
-void RecordManager::CreateTable(string table_name)
+bool RecordManager::CreateTable(string table_name)
 {
-    ofstream output((table_name + ".db").c_str());
-    output.close();
+    ifstream ifs((table_name + ".db").c_str());
+    if(ifs.is_open()) {
+        ifs.close();
+        return false;
+    }
+    ifs.close();
+    ofstream ofs((table_name + ".db").c_str());
+    ofs.close();
+    return true;
 }
 
-void RecordManager::DropTable(string table_name)
+bool RecordManager::DropTable(string table_name)
 {
-    remove((table_name + ".db").c_str());
+    ifstream ifs((table_name + ".db").c_str());
+    if(ifs.is_open()) {
+        ifs.close();
+        remove((table_name + ".db").c_str());
+        buffer_manager_->DeleteTableBlock(table_name);
+        return true;
+    }
+    ifs.close();
+    return false;
 }
 
 void RecordManager::AddOneBlock(string table_name)
@@ -155,7 +171,7 @@ bool SatisfyWhere(vector<AttributeInfo> &attr_info, vector<string> &attr_value, 
     return true;
 }
 
-void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query)
+void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query, ResultSelect *result)
 {
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     for(int i = 0; i < table_info->block_num; i++) {
@@ -165,10 +181,7 @@ void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query)
                 vector<string> attribute_value;
                 ReadRecord(table_info->attribute_info, attribute_value, block + j * table_info->record_size);
                 if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
-                    for(int i = 0; i < (int)attribute_value.size(); i++) {
-                        cout << attribute_value[i] << " ";
-                    }
-                    cout << endl;
+                    result->record.push_back(attribute_value);
                 }
             }
     }

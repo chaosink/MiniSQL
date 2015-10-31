@@ -1,11 +1,15 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include "interpreter.h"
 #include "query.h"
 #include "api.h"
+#include "result.h"
 using namespace std;
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 Interpreter::Interpreter()
 {
@@ -24,32 +28,95 @@ void Interpreter::Init(API *api)
     api_ = api;
 }
 
-void Interpreter::Run()
+void Trim(string &command)
 {
-    string command_part;
-    string command = "";
-    while(!is_quit_)
-    {
-        Print(PROMPT);
-        bool is_command = false ;
-        while(!is_command)
-        {
-            getline(cin, command_part);
-            command += command_part;
-            if(command_part[command_part.length() - 1] == ';')
-            {
-                command[command.length() - 1] = ' ';
-                Query *query = Parse(command);
-                api_->ProcessQuery(query);
-                command = "";
-                is_command = true;
+    int pos = command.find_first_not_of(" \t\n");
+    command.erase(0, pos);
+    pos = command.find_last_not_of(" \t\n") + 1;
+    command.erase(pos, command.length() - pos);
+}
+
+void PrintSeparator(vector<int> &column_length) {
+    cout << "+";
+    for(int i = 0; i < column_length.size(); i++) {
+        for(int j = 0; j < column_length[i] + 2; j++)
+            cout << "-";
+        cout << "+";
+    }
+    cout << endl;
+}
+
+void PrintRecord(vector<string> record, vector<int> &column_length) {
+    cout << "|";
+    for(int i = 0; i < record.size(); i++)
+        cout << setw(column_length[i] + 1) << record[i] << " |";
+    cout << endl;
+}
+
+void PrintForm(ResultSelect *r) {
+    vector<int> column_length;
+    for(int i = 0; i < r->attribute_name.size(); i++)
+        column_length.push_back(r->attribute_name[i].length());
+    for(int i = 0; i < r->attribute_name.size(); i++)
+        for(int j = 0; j < r->record.size(); j++)
+            column_length[i] = MAX(column_length[i], r->record[j][i].length());
+
+    PrintSeparator(column_length);
+    PrintRecord(r->attribute_name, column_length);
+    PrintSeparator(column_length);
+    for(int i = 0; i < r->record.size(); i++) {
+        PrintRecord(r->record[i], column_length);
+        PrintSeparator(column_length);
+    }
+}
+
+void Interpreter::RunWithInputStream(bool is_cmd, istream &is) {
+    bool is_command = true;
+    string command;
+    if(is_cmd) Print(PROMPT);
+    while(!is_quit_) {
+        char ch;
+        while(((ch = is.get()) == ' ' || ch == '\t') && is_command);
+        if(is.eof()) break;
+        if(ch == '\n') {
+            if(!is_command) command += ch;
+            if(is_cmd) {
+                if(is_command) Print(PROMPT);
+                else Print(PROMPT_PART);
             }
-            if(!is_command) {
+        } else if(ch == ';') {
+            Trim(command);
+            //cout << "'" << command << "'" << endl;
+            Result *result = NULL;
+            ParseResult parse_result;
+            Query *query = ParseQuery(command, &parse_result);
+            if(!parse_result.is_failed && query) {
+                result = api_->ProcessQuery(query);
+                cout << result->message << endl;
+                if(!result->is_failed && result->type == SELECT) {
+                    ResultSelect *r = (ResultSelect *)result;
+                    if(!r->record.empty()) PrintForm(r);
+                }
+                delete result;
+                delete query;
+            } else
+                cout << parse_result.message << endl;
+            command.clear();
+            is_command = true;
+        } else {
+            if(ch == '(' || ch == ')' || ch == ',') {
                 command += " ";
-                Print(PROMPT_PART);
-            }
+                command += ch;
+                command += " ";
+            } else command += ch;
+            is_command = false;
         }
     }
+}
+
+void Interpreter::Run()
+{
+    RunWithInputStream(true, cin);
 }
 
 void Interpreter::Terminate()
@@ -72,7 +139,7 @@ void ReplaceParenthesesWithSpace(string *str)
     }
 }
 
-void ParseAttribute(QueryCreateTable *query, string attr_str)
+bool ParseAttribute(QueryCreateTable *query, string &attr_str)
 {
     ReplaceParenthesesWithSpace(&attr_str);
     istringstream iss(attr_str);
@@ -100,81 +167,104 @@ void ParseAttribute(QueryCreateTable *query, string attr_str)
         if(!attr_unique.empty()) attribute.is_unique = true;
         else attribute.is_unique = false;
         query->attribute.push_back(attribute);
+        return true;
     } else {
         string primary_attr;
         iss >> primary_attr;
         iss >> primary_attr;
         query->primary_key = primary_attr;
+        return true;
     }
+    return false;
 }
 
-Query *Interpreter::Parse(string command)
+Query *Interpreter::ParseQuery(string command, ParseResult *parse_result)
 {
-    int start = command.find_first_not_of(' ');
-    if(start == -1) return NULL;
-    int end = command.find_first_of(" ;", start);
-    string command_type = command.substr(start, end - start);
-    if(command_type == "create") {
-        start = command.find_first_not_of(' ', end);
-        end = command.find_first_of(' ', start);
-        command_type = command.substr(start, end - start);
-        if(command_type == "table") {
-            start = command.find_first_not_of(' ', end);
-            end = command.find_first_of(" (", start);
-            string table_name = command.substr(start, end - start);
+    parse_result->is_failed = true;
+    istringstream iss(command);
+
+    string word;
+    iss >> word;
+    if(word.empty()) {
+        parse_result->message = "Error: No query specified!";
+        return NULL;
+    }
+
+    if(word == "create") {
+        iss >> word;
+        if(word == "table") {
+            string table_name;
+            iss >> table_name;
+            if(table_name.empty()) {
+                parse_result->message = "Error: No table name in CREATE TABLE!";
+                return NULL;
+            }
+            iss >> word;
+            if(word != "(") {
+                parse_result->message = "Error: Invalid systax in CREATE TABLE!";
+                return NULL;
+            }
             QueryCreateTable *query = new QueryCreateTable;
             query->table_name = table_name;
-            start = command.find_first_of('(', end);
-            end = start;
+            int start = command.find_first_of('(');
+            int end = start;
             while(end != -1) {
                 end++;
                 start = command.find_first_not_of(' ', end);
                 end = command.find_first_of(',', start);
-                int end_d;
-                if(end == -1) end_d = command.find_first_of(")", start);
-                else end_d = end;
+                int end_d = end;
+                if(end == -1) end_d = command.find_last_of(")");
                 string attr_str = command.substr(start, end_d - start);
-                ParseAttribute(query, attr_str);
+                if(!ParseAttribute(query, attr_str)) {
+                    parse_result->message = "Error: Invalid systax in table information of CREATE TABLE!";
+                    delete query;
+                    return NULL;
+                }
             }
+            if(query->primary_key.empty()) {
+                parse_result->message = "Error: No primary key specified in CREATE TABLE!";
+                delete query;
+                return NULL;
+            }
+            parse_result->is_failed = false;
             return query;
-        } else if(command_type == "index") {
-            start = command.find_first_not_of(' ', end);
-            end = command.find_first_of(' ', start);
-            string index_name = command.substr(start, end - start);
-            start = command.find_first_not_of(' ', end);
-            end = command.find_first_of(' ', start);
-            start = command.find_first_not_of(' ', end);
-            end = command.find_first_of(' ', start);
-            string table_name = command.substr(start, end - start);
-            start = command.find_first_of('(', end);
-            end = command.find_first_of(')', start);
-            string attr_name = command.substr(start + 1, end - start - 1);
+        } else if(word == "index") {
+            string index_name;
+            iss >> index_name;
+            iss >> word;
+            string table_name;
+            iss >> table_name;
+            iss >> word;
+            string attr_name;
+            iss >> attr_name;
             QueryCreateIndex *query = new QueryCreateIndex;
+            query = new QueryCreateIndex;
             query->index_name = index_name;
             query->table_name = table_name;
             query->attribute_name = attr_name;
+            parse_result->is_failed = false;
             return query;
         }
-    } else if(command_type == "drop") {
-        start = command.find_first_not_of(' ', end);
-        end = command.find_first_of(' ', start);
-        command_type = command.substr(start, end - start);
-        if(command_type == "table") {
-            start = command.find_first_not_of(' ', end);
-            end = command.find_first_of(" ;", start);
-            string table_name = command.substr(start, end - start);
+        parse_result->message = "Error: Invalid CREATE command type!";
+        return NULL;
+    } else if(word == "drop") {
+        iss >> word;
+        if(word == "table") {
+            string table_name;
+            iss >> table_name;
             QueryDropTable *query = new QueryDropTable;
             query->table_name = table_name;
+            parse_result->is_failed = false;
             return query;
-        } else if(command_type == "index") {
-            start = command.find_first_not_of(' ', end);
-            end = command.find_first_of(" ;", start);
-            string index_name = command.substr(start, end - start);
+        } else if(word == "index") {
+            string index_name;
+            iss >> index_name;
             QueryDropIndex *query = new QueryDropIndex;
             query->index_name = index_name;
+            parse_result->is_failed = false;
             return query;
         }
-    } else if(command_type == "select") {
+    } else if(word == "select") {
         istringstream iss(command);
         string word;
         iss >> word;
@@ -206,19 +296,16 @@ Query *Interpreter::Parse(string command)
                 if(word.empty()) break;
             }
         }
+        parse_result->is_failed = false;
         return query;
-    } else if(command_type == "insert") {
-        start = command.find_first_not_of(' ', end);
-        end = command.find_first_of(' ', start);
-        start = command.find_first_not_of(' ', end);
-        end = command.find_first_of(' ', start);
-        string table_name = command.substr(start, end - start);
+    } else if(word == "insert") {
+        iss >> word;
+        string table_name;
+        iss >> table_name;
         QueryInsert *query = new QueryInsert;
         query->table_name = table_name;
-        start = command.find_first_not_of(' ', end);
-        end = command.find_first_of(' ', start);
-        start = command.find_first_of('(', end);
-        end = start;
+        int start = command.find_first_of('(');
+        int end = start;
         while(end != -1) {
             end++;
             start = command.find_first_not_of(' ', end);
@@ -227,10 +314,12 @@ Query *Interpreter::Parse(string command)
             if(end == -1) end_d = command.find_first_of(")", start);
             else end_d = end;
             string attr_value = command.substr(start, end_d - start);
+            Trim(attr_value);
             query->attribute_value.push_back(attr_value);
         }
+        parse_result->is_failed = false;
         return query;
-    } else if(command_type == "delete") {
+    } else if(word == "delete") {
         istringstream iss(command);
         string word;
         iss >> word;
@@ -261,41 +350,21 @@ Query *Interpreter::Parse(string command)
                if(word.empty()) break;
            }
         }
+        parse_result->is_failed = false;
         return query;
-    } else if(command_type == "quit") {
+    } else if(word == "quit") {
         is_quit_ = true;
+        parse_result->message = "Bye!";
         return NULL;
-    } else if(command_type == "execfile") {
-        start = command.find_first_not_of(' ', end);
-        end = command.find_first_of(" ;", start);
-        string file_name = command.substr(start, end - start);
-        ifstream input(file_name.c_str());
-        {
-            string command_part;
-            string command = "";
-            while(!input.eof())
-            {
-                bool is_command = false ;
-                while(!is_command)
-                {
-                    getline(input, command_part);
-                    command += command_part;
-                    if(command_part[command_part.length() - 1] == ';')
-                    {
-                        command[command.length() - 1] = ' ';
-                        Query *query = Parse(command);
-                        api_->ProcessQuery(query);
-                        command = "";
-                        is_command = true;
-                    }
-                    if(!is_command) {
-                        command += " ";
-                    }
-                    if(input.eof()) break;
-                }
-            }
-        }
+    } else if(word == "execfile") {
+        string file_name;
+        iss >> file_name;
+        ifstream ifs(file_name.c_str());
+        RunWithInputStream(false, ifs);
+        ifs.close();
+        parse_result->message = "Execfile completed!";
         return NULL;
     }
+    parse_result->message = "Error: Invalid SQL command type!";
     return NULL;
 }

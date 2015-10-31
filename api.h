@@ -5,6 +5,7 @@
 #include "record_manager.h"
 #include "index_manager.h"
 #include "catalog_manager.h"
+#include "result.h"
 
 class API
 {
@@ -15,7 +16,7 @@ public:
     API();
     ~API();
     void Init(RecordManager *record_manager, IndexManager *index_manager, CatalogManager *catalog_manager);
-    void ProcessQuery(Query *query);
+    Result *ProcessQuery(Query *query);
     void Terminate();
 };
 

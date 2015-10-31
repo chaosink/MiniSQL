@@ -31,6 +31,7 @@ public:
     void ReadTableBlock(string table_name, int table_block_num, int block_num);
     void WriteTableBlock(string table_name, int table_block_num, int block_num);
     int GetAnAvailableBufferBlock();
+    void DeleteTableBlock(string table_name);
     void Terminate();
 };
 
