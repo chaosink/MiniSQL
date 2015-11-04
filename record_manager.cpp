@@ -10,28 +10,23 @@
 #include "result.h"
 using namespace std;
 
-RecordManager::RecordManager()
-{
+RecordManager::RecordManager() {
 
 }
 
-RecordManager::~RecordManager()
-{
+RecordManager::~RecordManager() {
 
 }
 
-void RecordManager::Init(BufferManager *buffer_manager)
-{
+void RecordManager::Init(BufferManager *buffer_manager) {
     buffer_manager_ = buffer_manager;
 }
 
-void RecordManager::Terminate()
-{
+void RecordManager::Terminate() {
 
 }
 
-bool RecordManager::CreateTable(string table_name)
-{
+bool RecordManager::CreateTable(string table_name) {
     ifstream ifs((table_name + ".db").c_str());
     if(ifs.is_open()) {
         ifs.close();
@@ -43,39 +38,36 @@ bool RecordManager::CreateTable(string table_name)
     return true;
 }
 
-bool RecordManager::DropTable(string table_name)
-{
+bool RecordManager::DropTable(string table_name) {
     ifstream ifs((table_name + ".db").c_str());
     if(ifs.is_open()) {
         ifs.close();
         remove((table_name + ".db").c_str());
-        buffer_manager_->DeleteTableBlock(table_name);
+        buffer_manager_->DeleteBlock(table_name + ".db");
         return true;
     }
     ifs.close();
     return false;
 }
 
-void RecordManager::AddOneBlock(string table_name)
-{
+void RecordManager::AddOneBlock(string table_name) {
     ofstream output((table_name + ".db").c_str(), ofstream::app | ofstream::binary);
     for(int i = 0; i < BLOCK_SIZE; i++) output.write("\0", 1);
     output.close();
 }
 
-void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query)
-{
+void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     if(table_info->block_num * table_info->record_num_per_block == table_info->record_num) {
         AddOneBlock(table_info->table_name);
-        char *block = buffer_manager_->GetTableBlock(table_info->table_name, table_info->block_num);
+        char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", table_info->block_num);
         table_info->block_num++;
         WriteRecord(table_info->attribute_info, query->attribute_value, block);
         table_info->record_num++;
         return;
     }
     for(int i = 0; i < table_info->block_num; i++) {
-        char *block = buffer_manager_->GetTableBlock(table_info->table_name, i);
+        char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
         for(int j = 0; j < table_info->record_num_per_block; j++)
             if(!block[j * table_info->record_size]) {
                 WriteRecord(table_info->attribute_info, query->attribute_value, block + j * table_info->record_size);
@@ -85,8 +77,7 @@ void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query)
     }
 }
 
-void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string> &attr_value, char *address)
-{
+void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string> &attr_value, char *address) {
     *address = 1;
     address++;
     for(int i = 0; i < (int)attr_info.size() ; i++)
@@ -112,8 +103,7 @@ void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string>
 }
 
 template <typename T>
-bool SatisfyTemplate(T a, T b, ComparisonType comparison)
-{
+bool SatisfyTemplate(T a, T b, ComparisonType comparison) {
     switch(comparison) {
         case EQUAL:
             if(a == b) return true;
@@ -171,11 +161,10 @@ bool SatisfyWhere(vector<AttributeInfo> &attr_info, vector<string> &attr_value, 
     return true;
 }
 
-void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query, ResultSelect *result)
-{
+void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query, ResultSelect *result) {
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     for(int i = 0; i < table_info->block_num; i++) {
-        char *block = buffer_manager_->GetTableBlock(table_info->table_name, i);
+        char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
         for(int j = 0; j < table_info->record_num_per_block; j++)
             if(block[j * table_info->record_size]) {
                 vector<string> attribute_value;
@@ -187,8 +176,7 @@ void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query, Resu
     }
 }
 
-void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> &attr_value, char *address)
-{
+void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> &attr_value, char *address) {
     address++;
     for(int i = 0; i < (int)attr_info.size() ; i++) {
         switch(attr_info[i].type) {
@@ -224,10 +212,10 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
     //cout << endl;
 }
 
-void RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query)
-{
+int RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query) {
+    int delete_num = 0;
     for(int i = 0; i < table_info->block_num; i++) {
-        char *block = buffer_manager_->GetTableBlock(table_info->table_name, i);
+        char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
         for(int j = 0; j < table_info->record_num_per_block; j++)
             if(block[j * table_info->record_size]) {
                 vector<string> attribute_value;
@@ -235,7 +223,9 @@ void RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query)
                 if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
                     block[j * table_info->record_size] = 0;
                     table_info->record_num--;
+                    delete_num++;
                 }
             }
     }
+    return delete_num;
 }

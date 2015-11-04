@@ -10,8 +10,7 @@ SOURCES += main.cpp \
     record_manager.cpp \
     index_manager.cpp \
     buffer_manager.cpp \
-    dbms.cpp \
-    btree.cpp
+    dbms.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -27,5 +26,5 @@ HEADERS += \
     query.h \
     table.h \
     result.h \
-    btree.h
+    b_plus_tree.h
 

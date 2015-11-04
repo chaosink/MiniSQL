@@ -1,7 +1,6 @@
 #include "dbms.h"
 
-int main()
-{
+int main() {
     DBMS dbms;
 
     dbms.Init();

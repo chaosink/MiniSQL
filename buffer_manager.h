@@ -8,30 +8,28 @@ using namespace std;
 #define DEFAULT_BLOCK_NUM 10
 #define MAX_TIME 2147483647
 
-struct BufferBlockInfo
-{
-    string table_name;
-    int table_block_num;
+struct BlockInfo {
+    string file_name;
+    int file_block_num;
     long time;
     bool is_modified;
     bool is_pined;
 };
 
-class BufferManager
-{
+class BufferManager {
     int block_num_;
-    char (*buffer_)[BLOCK_SIZE];
-    BufferBlockInfo *buffer_block_info_;
+    char (*block_)[BLOCK_SIZE];
+    BlockInfo *block_info_;
+    void ReadFileBlock(string file_name, int file_block_num, int block_num);
+    void WriteFileBlock(string file_name, int file_block_num, int block_num);
+    int GetAnAvailableBufferBlock();
 public:
     BufferManager();
     ~BufferManager();
     void Init();
     void Init(int block_num);
-    char *GetTableBlock(string table_name, int table_record_num);
-    void ReadTableBlock(string table_name, int table_block_num, int block_num);
-    void WriteTableBlock(string table_name, int table_block_num, int block_num);
-    int GetAnAvailableBufferBlock();
-    void DeleteTableBlock(string table_name);
+    char *GetFileBlock(string file_name, int file_block_num);
+    void DeleteBlock(string file_name);
     void Terminate();
 };
 

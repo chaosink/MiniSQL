@@ -7,8 +7,7 @@
 #include "catalog_manager.h"
 #include "result.h"
 
-class API
-{
+class API {
     RecordManager *record_manager_;
     IndexManager *index_manager_;
     CatalogManager *catalog_manager_;

@@ -5,8 +5,7 @@
 #include "query.h"
 #include "table.h"
 
-class CatalogManager
-{
+class CatalogManager {
     BufferManager *buffer_manager_;
 public:
     CatalogManager();
@@ -15,6 +14,7 @@ public:
     void CreateCatalog(QueryCreateTable *query);
     void UpdateCatalog(TableInfo *table_info);
     void DropCatalog(string table_name);
+    void DropIndex(string &table_name, string &index_name);
     void Terminate();
     TableInfo *GetTableInfo(string table_name);
 };

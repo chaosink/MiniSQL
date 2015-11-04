@@ -11,66 +11,62 @@ using namespace std;
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-Interpreter::Interpreter()
-{
+Interpreter::Interpreter() {
     is_quit_ = false;
     PROMPT = _PROMPT;
     PROMPT_PART = _PROMPT_PART;
 }
 
-Interpreter::~Interpreter()
-{
+Interpreter::~Interpreter() {
 
 }
 
-void Interpreter::Init(API *api)
-{
+void Interpreter::Init(API *api) {
     api_ = api;
 }
 
-void Trim(string &command)
-{
+void Trim(string &command) {
     int pos = command.find_first_not_of(" \t\n");
     command.erase(0, pos);
     pos = command.find_last_not_of(" \t\n") + 1;
     command.erase(pos, command.length() - pos);
 }
 
-void PrintSeparator(vector<int> &column_length) {
+void PrintSeparator(vector<unsigned int> &column_length) {
     cout << "+";
-    for(int i = 0; i < column_length.size(); i++) {
-        for(int j = 0; j < column_length[i] + 2; j++)
+    for(int i = 0; i < (int)column_length.size(); i++) {
+        for(unsigned int j = 0; j < column_length[i] + 2; j++)
             cout << "-";
         cout << "+";
     }
     cout << endl;
 }
 
-void PrintRecord(vector<string> record, vector<int> &column_length) {
+void PrintRecord(vector<string> record, vector<unsigned int> &column_length) {
     cout << "|";
-    for(int i = 0; i < record.size(); i++)
+    for(int i = 0; i < (int)record.size(); i++)
         cout << setw(column_length[i] + 1) << record[i] << " |";
     cout << endl;
 }
 
 void PrintForm(ResultSelect *r) {
-    vector<int> column_length;
-    for(int i = 0; i < r->attribute_name.size(); i++)
+    vector<unsigned int> column_length;
+    for(int i = 0; i < (int)r->attribute_name.size(); i++)
         column_length.push_back(r->attribute_name[i].length());
-    for(int i = 0; i < r->attribute_name.size(); i++)
-        for(int j = 0; j < r->record.size(); j++)
+    for(int i = 0; i < (int)r->attribute_name.size(); i++)
+        for(int j = 0; j < (int)r->record.size(); j++)
             column_length[i] = MAX(column_length[i], r->record[j][i].length());
 
     PrintSeparator(column_length);
     PrintRecord(r->attribute_name, column_length);
     PrintSeparator(column_length);
-    for(int i = 0; i < r->record.size(); i++) {
+    for(int i = 0; i < (int)r->record.size(); i++) {
         PrintRecord(r->record[i], column_length);
         PrintSeparator(column_length);
     }
 }
 
-void Interpreter::RunWithInputStream(bool is_cmd, istream &is) {
+void Interpreter::RunWithInputStream(bool is_cmd, istream &is, string environment) {
     bool is_command = true;
     string command;
     if(is_cmd) Print(PROMPT);
@@ -89,7 +85,7 @@ void Interpreter::RunWithInputStream(bool is_cmd, istream &is) {
             //cout << "'" << command << "'" << endl;
             Result *result = NULL;
             ParseResult parse_result;
-            Query *query = ParseQuery(command, &parse_result);
+            Query *query = ParseQuery(command, &parse_result, environment);
             if(!parse_result.is_failed && query) {
                 result = api_->ProcessQuery(query);
                 cout << result->message << endl;
@@ -114,33 +110,27 @@ void Interpreter::RunWithInputStream(bool is_cmd, istream &is) {
     }
 }
 
-void Interpreter::Run()
-{
-    RunWithInputStream(true, cin);
+void Interpreter::Run() {
+    RunWithInputStream(true, cin, "");
 }
 
-void Interpreter::Terminate()
-{
+void Interpreter::Terminate() {
 
 }
 
-void Interpreter::Print(string information)
-{
+void Interpreter::Print(string information) {
     cout << information;
 }
 
-void ReplaceParenthesesWithSpace(string *str)
-{
+void ReplaceParenthesesWithSpace(string *str) {
     int found = str->find_first_of("()");
-    while (found != -1)
-    {
+    while (found != -1) {
         (*str)[found]=' ';
         found = str->find_first_of("()", found + 1);
     }
 }
 
-bool ParseAttribute(QueryCreateTable *query, string &attr_str)
-{
+bool ParseAttribute(QueryCreateTable *query, string &attr_str) {
     ReplaceParenthesesWithSpace(&attr_str);
     istringstream iss(attr_str);
     string attr_name;
@@ -178,8 +168,7 @@ bool ParseAttribute(QueryCreateTable *query, string &attr_str)
     return false;
 }
 
-Query *Interpreter::ParseQuery(string command, ParseResult *parse_result)
-{
+Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string environment) {
     parse_result->is_failed = true;
     istringstream iss(command);
 
@@ -359,8 +348,17 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result)
     } else if(word == "execfile") {
         string file_name;
         iss >> file_name;
+        if(file_name == environment) {
+            parse_result->message = "Error: Script file '" + file_name + "' tried to execute itself!";
+            return NULL;
+        }
         ifstream ifs(file_name.c_str());
-        RunWithInputStream(false, ifs);
+        if(!ifs.is_open()) {
+            parse_result->message = "Error: Script file '" + file_name + "' doesn't exist!";
+            ifs.close();
+            return NULL;
+        }
+        RunWithInputStream(false, ifs, file_name);
         ifs.close();
         parse_result->message = "Execfile completed!";
         return NULL;

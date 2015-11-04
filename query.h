@@ -9,93 +9,76 @@ enum QueryType {CREATE_TABLE, DROP_TABLE, CREATE_INDEX, DROP_INDEX, SELECT, INSE
 enum AttributeType {CHAR, INT, FLOAT};
 enum ComparisonType {EQUAL, NOT_EQUAL, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL};
 
-struct Attribute
-{
+struct Attribute {
 	string name;
 	AttributeType type;
 	int char_length;
 	bool is_unique;
 };
 
-struct Where
-{
+struct Where {
     string attribute_name;
     ComparisonType comparison;
     string attribute_value;
 };
 
-struct Query
-{
+struct Query {
 	QueryType type;
 };
 
-struct QueryCreateTable : Query
-{
+struct QueryCreateTable : Query {
     string table_name;
     vector<Attribute> attribute;
 	string primary_key;
-    QueryCreateTable()
-    {
+    QueryCreateTable() {
     	type = CREATE_TABLE;
     }
 };
 
-struct QueryDropTable : Query
-{
+struct QueryDropTable : Query {
     string table_name;
-    QueryDropTable()
-    {
+    QueryDropTable() {
     	type = DROP_TABLE;
     }
 };
 
-struct QueryCreateIndex : Query
-{
+struct QueryCreateIndex : Query {
     string index_name;
     string table_name;
     string attribute_name;
-    QueryCreateIndex()
-    {
+    QueryCreateIndex() {
         type = CREATE_INDEX;
     }
 };
 
-struct QueryDropIndex : Query
-{
+struct QueryDropIndex : Query {
     string index_name;
-    QueryDropIndex()
-    {
+    QueryDropIndex() {
     	type = DROP_INDEX;
     }
 };
 
-struct QuerySelect : Query
-{
+struct QuerySelect : Query {
     string table_name;
     vector<string> attribute_name; // 如果为*则留空
     vector<Where> where;
-    QuerySelect()
-    {
+    QuerySelect() {
     	type = SELECT;
     }
 };
 
-struct QueryInsert : Query
-{
+struct QueryInsert : Query {
     string table_name;
     vector<string> attribute_value;
-    QueryInsert()
-    {
+    QueryInsert() {
 		type = INSERT;    	
     }
 };
 
-struct QueryDelete : Query
-{
+struct QueryDelete : Query {
     string table_name;
     vector<Where> where;
-    QueryDelete()
-    {
+    QueryDelete() {
     	type = DELETE;
     }
 };

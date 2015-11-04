@@ -14,8 +14,7 @@ struct ParseResult {
     string message;
 };
 
-class Interpreter
-{
+class Interpreter {
     const char *PROMPT;
     const char *PROMPT_PART;
     bool is_quit_;
@@ -25,8 +24,8 @@ public:
     ~Interpreter();
     void Init(API *api);
     void Run();
-    void RunWithInputStream(bool is_cmd, istream &is);
-    Query *ParseQuery(string command, ParseResult *parse_result);
+    void RunWithInputStream(bool is_cmd, istream &is, string environment);
+    Query *ParseQuery(string command, ParseResult *parse_result, string environment);
     void Terminate();
     void Print(string information);
     void delete_space(string str);

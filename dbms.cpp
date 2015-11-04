@@ -9,18 +9,15 @@
 #include "buffer_manager.h"
 using namespace std;
 
-DBMS::DBMS()
-{
+DBMS::DBMS() {
     DBMS_INFORMATION = _DBMS_INFORMATION;
 }
 
-DBMS::~DBMS()
-{
+DBMS::~DBMS() {
 
 }
 
-void DBMS::Init()
-{
+void DBMS::Init() {
     buffer_manager_.Init();
     catalog_manager_.Init(&buffer_manager_);
     index_manager_.Init(&buffer_manager_);
@@ -29,14 +26,12 @@ void DBMS::Init()
     interpreter_.Init(&api_);
 }
 
-void DBMS::Run()
-{
+void DBMS::Run() {
     PrintDBMSInformation();
     interpreter_.Run();
 }
 
-void DBMS::Terminate()
-{
+void DBMS::Terminate() {
     buffer_manager_.Terminate();
     catalog_manager_.Terminate();
     index_manager_.Terminate();
@@ -45,12 +40,10 @@ void DBMS::Terminate()
     interpreter_.Terminate();
 }
 
-void DBMS::PrintDBMSInformation()
-{
+void DBMS::PrintDBMSInformation() {
     Print(DBMS_INFORMATION);
 }
 
-void DBMS::Print(string information)
-{
+void DBMS::Print(string information) {
     interpreter_.Print(information);
 }
