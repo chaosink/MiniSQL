@@ -9,6 +9,7 @@ struct String {
         new (this) String("");
     }
     String(const char *content) {
+        memset(this->content, 0, sizeof(this->content));
         strcpy(this->content, content);
     }
     bool operator==(const String &value) {

@@ -135,7 +135,7 @@ bool SatisfyTemplate(T a, T b, ComparisonType comparison) {
     return false;
 }
 
-bool Satisfy(AttributeType &type, string &attr_value, Where &where) {
+bool Satisfy(int &type, string &attr_value, Where &where) {
     //cout << attr_value << " " << where.attribute_value << endl;
     if(type == CHAR) {
         string a = "'" + attr_value + "'";

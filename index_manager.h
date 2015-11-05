@@ -16,8 +16,9 @@ public:
     void UpdateIndexInfo(IndexInfo *index_info);
     bool CreateIndex(TableInfo *table_info, string &index_name, string &attr_name);
     void InsertIndex(string index_name, string attr_value, Pointer pointer);
+    void InsertAllIndex(TableInfo *table_info, string index_name);
     bool DropIndex(string &index_name);
-    bool DropAllIndex(vector<IndexInfo> &index_info);
+    bool DropAllIndex(vector<Index> &index);
     string GetIndexTableName(string &index_name);
     void Terminate();
 };

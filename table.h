@@ -7,13 +7,13 @@ using namespace std;
 
 struct AttributeInfo {
 	string name;
-	AttributeType type;
+    int type;
 	int char_length;
 	bool is_unique;
 };
 
 struct IndexInfo {
-	string index_name;
+    string index_name;
     string table_name;
     string attribute_name;
     int type;
@@ -21,6 +21,11 @@ struct IndexInfo {
     int root;
     int block_num;
     int empty_block_num;
+};
+
+struct Index {
+    string index_name;
+    string attribute_name;
 };
 
 struct TableInfo {
@@ -33,7 +38,7 @@ struct TableInfo {
 	int record_size;
 	int block_num;
 	vector<AttributeInfo> attribute_info;
-    vector<IndexInfo> index_info;
+    vector<Index> index;
 };
 
 #endif // TABLE_H

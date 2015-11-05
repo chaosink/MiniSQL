@@ -23,7 +23,7 @@ void API::Init(RecordManager *record_manager, IndexManager *index_manager, Catal
     catalog_manager_ = catalog_manager;
 }
 
-bool VerifyType(AttributeType type, string &attr_value) {
+bool VerifyType(int type, string &attr_value) {
     switch(type) {
         case CHAR:
             if(attr_value[0] != '\'') return false;
@@ -90,7 +90,7 @@ Result *API::ProcessQuery(Query *query)
             QueryDropTable *q = (QueryDropTable *)query;
             if(record_manager_->DropTable(q->table_name)) {
                 TableInfo *table_info = catalog_manager_->GetTableInfo(q->table_name);
-                index_manager_->DropAllIndex(table_info->index_info);
+                index_manager_->DropAllIndex(table_info->index);
                 catalog_manager_->DropCatalog(q->table_name);
                 result->is_failed = false;
                 result->message = "Table '" + q->table_name + "' droped successfully";
@@ -108,6 +108,7 @@ Result *API::ProcessQuery(Query *query)
             if(table_info) {
                 if(index_manager_->CreateIndex(table_info, q->index_name, q->attribute_name)){
                     catalog_manager_->UpdateCatalog(table_info);
+                    index_manager_->InsertAllIndex(table_info, q->index_name);
                     result->is_failed = false;
                     result->message = "Index '" + q->index_name + "' created successfully";
                 } else {
@@ -181,8 +182,8 @@ Result *API::ProcessQuery(Query *query)
                 }
                 Pointer pointer = record_manager_->InsertRecord(table_info, q);
                 for(int i = 0; i < table_info->index_num; i++) {
-                    int attr_num = GetAttributeNum(table_info->attribute_info, table_info->index_info[i].attribute_name);
-                    index_manager_->InsertIndex(table_info->index_info[i].index_name, q->attribute_value[attr_num], pointer);
+                    int attr_num = GetAttributeNum(table_info->attribute_info, table_info->index[i].attribute_name);
+                    index_manager_->InsertIndex(table_info->index[i].index_name, q->attribute_value[attr_num], pointer);
                 }
                 catalog_manager_->UpdateCatalog(table_info);
                 result->is_failed = false;
