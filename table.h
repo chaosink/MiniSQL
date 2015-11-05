@@ -14,7 +14,13 @@ struct AttributeInfo {
 
 struct IndexInfo {
 	string index_name;
-	string attribute_name;
+    string table_name;
+    string attribute_name;
+    int type;
+    int char_length;
+    int root;
+    int block_num;
+    int empty_block_num;
 };
 
 struct TableInfo {
@@ -27,7 +33,7 @@ struct TableInfo {
 	int record_size;
 	int block_num;
 	vector<AttributeInfo> attribute_info;
-	vector<IndexInfo> index_info;
+    vector<IndexInfo> index_info;
 };
 
 #endif // TABLE_H

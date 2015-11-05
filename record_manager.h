@@ -5,6 +5,7 @@
 #include "query.h"
 #include "table.h"
 #include "result.h"
+#include "value_pointer.h"
 
 class RecordManager {
     BufferManager *buffer_manager_;
@@ -15,7 +16,7 @@ public:
     void Terminate();
     bool CreateTable(string table_name);
     bool DropTable(string table_name);
-    void InsertRecord(TableInfo *table_info, QueryInsert *query);
+    Pointer InsertRecord(TableInfo *table_info, QueryInsert *query);
     void SelectRecord(TableInfo *table_info, QuerySelect *query, ResultSelect *result);
     int DeleteRecord(TableInfo *table_info, QueryDelete *query);
     void AddOneBlock(string table_name);

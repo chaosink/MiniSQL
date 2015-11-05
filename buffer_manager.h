@@ -5,8 +5,8 @@
 using namespace std;
 
 #define BLOCK_SIZE 4096
-#define DEFAULT_BLOCK_NUM 10
-#define MAX_TIME 2147483647
+#define DEFAULT_BLOCK_NUM 1000
+#define MAX_TIME 9223372036854775807 //2147483647000000
 
 struct BlockInfo {
     string file_name;

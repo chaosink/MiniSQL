@@ -35,7 +35,13 @@ void CatalogManager::CreateCatalog(QueryCreateTable *query) {
     for(it = query->attribute.begin(); it != query->attribute.end(); it++) {
         ofs << it->name << ' ' << it->type << ' ' << it->char_length << ' ' << it->is_unique << endl;
     }
-    ofs << query->primary_key << ' ' << query->primary_key << endl;
+    int primary_key_num;
+    for(unsigned int i = 0; i < query->attribute.size(); i++)
+        if(query->attribute[i].name == query->primary_key) {
+            primary_key_num = i;
+            break;
+        }
+    ofs << query->primary_key << ' ' << query->primary_key << ' ' << query->attribute[primary_key_num].type << ' ' << query->attribute[primary_key_num].char_length << ' ' << -1 << ' ' << 0 << ' ' << 0 << endl;
     ofs.close();
 }
 
@@ -61,7 +67,8 @@ TableInfo *CatalogManager::GetTableInfo(string table_name) {
     }
     for(int i = 0; i < table_info->index_num; i++) {
         IndexInfo index_info;
-        ifs >> index_info.index_name >> index_info.attribute_name;
+        ifs >> index_info.index_name >> index_info.attribute_name >> index_info.type >> index_info.char_length >> index_info.root >> index_info.block_num >> index_info.empty_block_num;
+        index_info.table_name = table_name;
         table_info->index_info.push_back(index_info);
     }
     return table_info;
@@ -75,7 +82,7 @@ void CatalogManager::UpdateCatalog(TableInfo *table_info) {
         ofs << it->name << ' ' << it->type << ' ' << it->char_length << ' ' << it->is_unique << endl;
     }
     for(int i = 0; i < table_info->index_num; i++) {
-        ofs << table_info->index_info[i].index_name << ' ' << table_info->index_info[i].attribute_name << endl;
+        ofs << table_info->index_info[i].index_name << ' ' << table_info->index_info[i].attribute_name << ' ' << table_info->index_info[i].type << ' ' << table_info->index_info[i].char_length << ' ' << table_info->index_info[i].root << ' ' << table_info->index_info[i].block_num << ' ' << table_info->index_info[i].empty_block_num << endl;
     }
     ofs.close();
 }

@@ -1,7 +1,8 @@
 #ifndef B_PLUS_TREE_HPP
 #define B_PLUS_TREE_HPP
 
-#include "buffer_manager.hpp"
+#include "buffer_manager.h"
+#include "table.h"
 #include <fstream>
 #include <vector>
 #include <iostream>
@@ -36,20 +37,21 @@ class BPlusTree {
     Node<V, P> swapper_;
     std::vector<int> queue_;
     int root_;
-    BufferManager buffer_manager_;
+    IndexInfo *index_info_;
+    BufferManager &buffer_manager_;
     void AddOneBlock();
     Node<V, P> GetNode(int node_num);
     Node<V, P> GetAnAvailableNode();
     Node<V, P> FindLeafNode(V value);
     void InsertInLeaf(Node<V, P> node, V value, P pointer);
-    void InsertInNonleaf(Node<V, P> node, P pointer_left, V value, P pointer_right);
+    void InsertInNonleaf(Node<V, P> node, int pointer_left_num, V value, int pointer_right_num);
     void InsertInParent(Node<V, P> node_left, V value, Node<V, P> node_right);
     void DeleteEntry(Node<V, P> node, V value);
     void DeleteInNode(Node<V, P> node, V value);
     bool GetSiblingAndSeperator(Node<V, P> node, P pointer, Node<V, P> &sibling_node, V &seperator);
     void ReplaceSeperator(Node<V, P> node, V value_old, V value_new);
 public:
-    BPlusTree(std::string name);
+    BPlusTree(IndexInfo *index_info, BufferManager &buffer_manager);
     ~BPlusTree();
     P Find(V value);
     void Insert(V value, P pointer);
@@ -57,41 +59,34 @@ public:
 };
 
 template <class V, class P>
-BPlusTree<V, P>::BPlusTree(std::string name) {
-    name_ = name;
+BPlusTree<V, P>::BPlusTree(IndexInfo *index_info, BufferManager &buffer_manager) : buffer_manager_(buffer_manager) {
     pointer_num_ = (BLOCK_SIZE - sizeof(int) - sizeof(char) - sizeof(int) - sizeof(P)) / (sizeof(P) + sizeof(V)) + 1;
     swapper_.value_num = new int;
     swapper_.pointer = new P[pointer_num_ + 1];
     swapper_.value = new V[pointer_num_];
 
-    std::ifstream ifs((name_ + ".info").c_str());
-    if(ifs.is_open()) {
-        ifs >> root_ >> node_num_;
-        ifs.close();
-        return;
-    }
-    ifs.close();
-
-    root_ = -1;
-    node_num_ = 0;
-    std::ofstream ofs((name_ + ".index").c_str());
-    ofs.close();
-
-    buffer_manager_.Init();
+    index_info_ = index_info;
+    name_ = index_info_->index_name;
+    root_ = index_info_->root;
+    node_num_ = index_info_->block_num;
+    empty_node_num_ = index_info_->empty_block_num;
 }
 
 template <class V, class P>
 BPlusTree<V, P>::~BPlusTree() {
-    std::ofstream ofs((name_ + ".info").c_str());
-    ofs << root_ << " " << node_num_;
-    ofs.close();
-    buffer_manager_.Terminate();
+    delete swapper_.value_num;
+    delete[] swapper_.pointer;
+    delete[] swapper_.value;
+    index_info_->root = root_;
+    index_info_->block_num = node_num_;
+    index_info_->empty_block_num = empty_node_num_;
 }
 
 template <class V, class P>
 void BPlusTree<V, P>::AddOneBlock() {
-    std::ofstream output((name_ + ".index").c_str(), std::ofstream::app | std::ofstream::binary);
-    for(int i = 0; i < BLOCK_SIZE; i++) output.write("\0", 1);
+    static char empty_block[BLOCK_SIZE] = {0};
+    std::ofstream output((name_ + ".idx").c_str(), std::ofstream::app | std::ofstream::binary);
+    output.write(empty_block, BLOCK_SIZE);
     output.close();
 }
 
@@ -101,7 +96,7 @@ Node<V, P> BPlusTree<V, P>::GetNode(int node_num) {
         std::cerr << "Node " << node_num << " doesn't exist!" << std::endl;
         return Node<V, P>();
     }
-    char *block = buffer_manager_.GetFileBlock(name_ + ".index", node_num);
+    char *block = buffer_manager_.GetFileBlock(name_ + ".idx", node_num);
     Node<V, P> node;
     node.num = (int *)block;
     node.state = block + sizeof(int);
@@ -113,10 +108,15 @@ Node<V, P> BPlusTree<V, P>::GetNode(int node_num) {
 
 template <class V, class P>
 Node<V, P> BPlusTree<V, P>::GetAnAvailableNode() {
-    for(unsigned int i = 0; i < node_num_; i++) {
-        Node<V, P> node = GetNode(i);
-        if(*node.state == EMPTY) return node;
-    }
+    if(empty_node_num_)
+        for(int i = 0; i < node_num_; i++) {
+            Node<V, P> node = GetNode(i);
+            if(*node.state == EMPTY) {
+                std::cout << "Empty node: " << i << std::endl;
+                empty_node_num_--;
+                return node;
+            }
+        }
     AddOneBlock();
     node_num_++;
     Node<V, P> node = GetNode(node_num_ - 1);
@@ -216,15 +216,15 @@ void BPlusTree<V, P>::InsertInLeaf(Node<V, P> node, V value, P pointer) {
 }
 
 template <class V, class P>
-void BPlusTree<V, P>::InsertInNonleaf(Node<V, P> node, P pointer_left, V value, P pointer_right) {
+void BPlusTree<V, P>::InsertInNonleaf(Node<V, P> node, int pointer_left_num, V value, int pointer_right_num) {
     for(int i = 0; i <= *node.value_num; i++)
-        if(node.pointer[i] == pointer_left) {
+        if(node.pointer[i].num == pointer_left_num) {
             (*node.value_num)++;
             for(int j = *node.value_num; j > i + 1; j--) {
                 node.pointer[j] = node.pointer[j - 1];
                 node.value[j - 1] = node.value[j - 2];
             }
-            node.pointer[i + 1] = pointer_right;
+            node.pointer[i + 1].num = pointer_right_num;
             node.value[i] = value;
             return;
         }
@@ -309,6 +309,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                 queue_.pop_back();
                 DeleteEntry(parent, seperator);
                 *node.state = EMPTY;
+                empty_node_num_++;
                 return;
             } else {
                 if(is_predecessor) {
@@ -358,6 +359,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                 queue_.pop_back();
                 DeleteEntry(parent, seperator);
                 *node.state = EMPTY;
+                empty_node_num_++;
                 return;
             } else {
                 if(is_predecessor) {

@@ -26,5 +26,6 @@ HEADERS += \
     query.h \
     table.h \
     result.h \
-    b_plus_tree.h
+    b_plus_tree.h \
+    value_pointer.h
 

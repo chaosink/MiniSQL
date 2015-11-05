@@ -51,12 +51,13 @@ bool RecordManager::DropTable(string table_name) {
 }
 
 void RecordManager::AddOneBlock(string table_name) {
+    static char empty_block[BLOCK_SIZE] ={0};
     ofstream output((table_name + ".db").c_str(), ofstream::app | ofstream::binary);
-    for(int i = 0; i < BLOCK_SIZE; i++) output.write("\0", 1);
+    output.write(empty_block, BLOCK_SIZE);
     output.close();
 }
 
-void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
+Pointer RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     if(table_info->block_num * table_info->record_num_per_block == table_info->record_num) {
         AddOneBlock(table_info->table_name);
@@ -64,7 +65,7 @@ void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
         table_info->block_num++;
         WriteRecord(table_info->attribute_info, query->attribute_value, block);
         table_info->record_num++;
-        return;
+        return Pointer(table_info->block_num - 1, 0);
     }
     for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
@@ -72,9 +73,10 @@ void RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
             if(!block[j * table_info->record_size]) {
                 WriteRecord(table_info->attribute_info, query->attribute_value, block + j * table_info->record_size);
                 table_info->record_num++;
-                return;
+                return Pointer(i, j * table_info->record_size);
             }
     }
+    return Pointer(-1, 0);
 }
 
 void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string> &attr_value, char *address) {

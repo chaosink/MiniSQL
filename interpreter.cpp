@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <sys/time.h>
 #include "interpreter.h"
 #include "query.h"
 #include "api.h"
@@ -60,10 +61,9 @@ void PrintForm(ResultSelect *r) {
     PrintSeparator(column_length);
     PrintRecord(r->attribute_name, column_length);
     PrintSeparator(column_length);
-    for(int i = 0; i < (int)r->record.size(); i++) {
+    for(int i = 0; i < (int)r->record.size(); i++)
         PrintRecord(r->record[i], column_length);
-        PrintSeparator(column_length);
-    }
+    PrintSeparator(column_length);
 }
 
 void Interpreter::RunWithInputStream(bool is_cmd, istream &is, string environment) {
@@ -87,12 +87,20 @@ void Interpreter::RunWithInputStream(bool is_cmd, istream &is, string environmen
             ParseResult parse_result;
             Query *query = ParseQuery(command, &parse_result, environment);
             if(!parse_result.is_failed && query) {
+                struct timeval time_start, time_end;
+                gettimeofday(&time_start, NULL);
                 result = api_->ProcessQuery(query);
-                cout << result->message << endl;
+                gettimeofday(&time_end, NULL);
+                float time_used = time_end.tv_sec - time_start.tv_sec + (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
                 if(!result->is_failed && result->type == SELECT) {
                     ResultSelect *r = (ResultSelect *)result;
                     if(!r->record.empty()) PrintForm(r);
                 }
+                cout << result->message;
+                if(result->is_failed)
+                    cout << endl;
+                else
+                    printf(" (%f sec)\n", time_used);
                 delete result;
                 delete query;
             } else
@@ -175,7 +183,7 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
     string word;
     iss >> word;
     if(word.empty()) {
-        parse_result->message = "Error: No query specified!";
+        parse_result->message = "ERROR: No query specified";
         return NULL;
     }
 
@@ -185,12 +193,12 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
             string table_name;
             iss >> table_name;
             if(table_name.empty()) {
-                parse_result->message = "Error: No table name in CREATE TABLE!";
+                parse_result->message = "ERROR: No table name in CREATE TABLE";
                 return NULL;
             }
             iss >> word;
             if(word != "(") {
-                parse_result->message = "Error: Invalid systax in CREATE TABLE!";
+                parse_result->message = "ERROR: Invalid systax in CREATE TABLE";
                 return NULL;
             }
             QueryCreateTable *query = new QueryCreateTable;
@@ -205,13 +213,13 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
                 if(end == -1) end_d = command.find_last_of(")");
                 string attr_str = command.substr(start, end_d - start);
                 if(!ParseAttribute(query, attr_str)) {
-                    parse_result->message = "Error: Invalid systax in table information of CREATE TABLE!";
+                    parse_result->message = "ERROR: Invalid systax in table information of CREATE TABLE";
                     delete query;
                     return NULL;
                 }
             }
             if(query->primary_key.empty()) {
-                parse_result->message = "Error: No primary key specified in CREATE TABLE!";
+                parse_result->message = "ERROR: No primary key specified in CREATE TABLE";
                 delete query;
                 return NULL;
             }
@@ -234,7 +242,7 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
             parse_result->is_failed = false;
             return query;
         }
-        parse_result->message = "Error: Invalid CREATE command type!";
+        parse_result->message = "ERROR: Invalid CREATE command type";
         return NULL;
     } else if(word == "drop") {
         iss >> word;
@@ -263,6 +271,7 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
         iss >> table_name;
         QuerySelect *query = new QuerySelect;
         query->table_name = table_name;
+        word.clear();
         iss >> word;
         if(word == "where") {
              while(true) {
@@ -284,9 +293,16 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
                 iss >> word;
                 if(word.empty()) break;
             }
+            parse_result->is_failed = false;
+            return query;
+        } else if(word.empty()) {
+            parse_result->is_failed = false;
+            return query;
+        } else {
+            parse_result->message = "ERROR: Invalid WHERE statement in SELECT";
+            delete query;
+            return NULL;
         }
-        parse_result->is_failed = false;
-        return query;
     } else if(word == "insert") {
         iss >> word;
         string table_name;
@@ -343,26 +359,30 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
         return query;
     } else if(word == "quit") {
         is_quit_ = true;
-        parse_result->message = "Bye!";
+        parse_result->message = "Bye";
         return NULL;
     } else if(word == "execfile") {
         string file_name;
         iss >> file_name;
+        if(file_name.empty()) {
+            parse_result->message = "ERROR: No file specified in EXECFILE";
+            return NULL;
+        }
         if(file_name == environment) {
-            parse_result->message = "Error: Script file '" + file_name + "' tried to execute itself!";
+            parse_result->message = "ERROR: Script file '" + file_name + "' tried to execute itself";
             return NULL;
         }
         ifstream ifs(file_name.c_str());
         if(!ifs.is_open()) {
-            parse_result->message = "Error: Script file '" + file_name + "' doesn't exist!";
+            parse_result->message = "ERROR: Script file '" + file_name + "' doesn't exist";
             ifs.close();
             return NULL;
         }
         RunWithInputStream(false, ifs, file_name);
         ifs.close();
-        parse_result->message = "Execfile completed!";
+        parse_result->message = "Execfile completed";
         return NULL;
     }
-    parse_result->message = "Error: Invalid SQL command type!";
+    parse_result->message = "ERROR: Invalid SQL command type";
     return NULL;
 }
