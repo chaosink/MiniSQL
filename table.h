@@ -12,17 +12,6 @@ struct AttributeInfo {
 	bool is_unique;
 };
 
-struct IndexInfo {
-    string index_name;
-    string table_name;
-    string attribute_name;
-    int type;
-    int char_length;
-    int root;
-    int block_num;
-    int empty_block_num;
-};
-
 struct Index {
     string index_name;
     string attribute_name;

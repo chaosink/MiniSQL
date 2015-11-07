@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -67,7 +68,8 @@ Pointer RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
         table_info->record_num++;
         return Pointer(table_info->block_num - 1, 0);
     }
-    for(int i = 0; i < table_info->block_num; i++) {
+    for(int i = table_info->block_num - 1; i >= 0; i--) {
+//    for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
         for(int j = 0; j < table_info->record_num_per_block; j++)
             if(!block[j * table_info->record_size]) {
@@ -163,7 +165,7 @@ bool SatisfyWhere(vector<AttributeInfo> &attr_info, vector<string> &attr_value, 
     return true;
 }
 
-void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query, ResultSelect *result) {
+void RecordManager::SelectRecord(TableInfo *table_info, vector<Where> &where, ResultSelect *result) {
     //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
@@ -171,10 +173,19 @@ void RecordManager::SelectRecord(TableInfo *table_info, QuerySelect *query, Resu
             if(block[j * table_info->record_size]) {
                 vector<string> attribute_value;
                 ReadRecord(table_info->attribute_info, attribute_value, block + j * table_info->record_size);
-                if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
+                if(SatisfyWhere(table_info->attribute_info, attribute_value, where))
                     result->record.push_back(attribute_value);
-                }
             }
+    }
+}
+
+void RecordManager::SelectRecordWithPointer(TableInfo *table_info, vector<Pointer> &pointer, vector<Where> &where_nonindex, ResultSelect *result) {
+    for(unsigned int i = 0; i < pointer.size(); i++) {
+        vector<string> attribute_value;
+        char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", pointer[i].num);
+        ReadRecord(table_info->attribute_info, attribute_value, block + pointer[i].offset);
+        if(SatisfyWhere(table_info->attribute_info, attribute_value, where_nonindex))
+            result->record.push_back(attribute_value);
     }
 }
 
@@ -214,7 +225,7 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
     //cout << endl;
 }
 
-int RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query) {
+int RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query, vector<vector<string> > &record) {
     int delete_num = 0;
     for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
@@ -226,8 +237,26 @@ int RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query) {
                     block[j * table_info->record_size] = 0;
                     table_info->record_num--;
                     delete_num++;
+                    record.push_back(attribute_value);
                 }
             }
     }
     return delete_num;
 }
+
+int RecordManager::DeleteRecordWithPointer(TableInfo *table_info, vector<Pointer> &pointer, vector<Where> &where_nonindex, vector<vector<string> > &record) {
+    int delete_num = 0;
+    for(unsigned int i = 0; i < pointer.size(); i++) {
+        vector<string> attribute_value;
+        char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", pointer[i].num);
+        ReadRecord(table_info->attribute_info, attribute_value, block + pointer[i].offset);
+        if(SatisfyWhere(table_info->attribute_info, attribute_value, where_nonindex)) {
+            block[pointer[i].offset] = 0;
+            table_info->record_num--;
+            delete_num++;
+            record.push_back(attribute_value);
+        }
+    }
+    return delete_num;
+}
+

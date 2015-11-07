@@ -37,7 +37,7 @@ struct ResultDropIndex : Result {
 
 struct ResultSelect : Result {
 	vector<string> attribute_name;
-    vector< vector<string> > record;
+    vector<vector<string> > record;
 	ResultSelect() {
 		type = SELECT;
 	}

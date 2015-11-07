@@ -22,6 +22,16 @@ struct Where {
     string attribute_value;
 };
 
+struct WhereIndex : Where{
+    string index_name;
+    WhereIndex(string &index_name, Where &where) {
+        this->index_name = index_name;
+        this->attribute_name = where.attribute_name;
+        this->comparison = where.comparison;
+        this->attribute_value = where.attribute_value;
+    }
+};
+
 struct Query {
 	QueryType type;
 };

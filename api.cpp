@@ -57,16 +57,62 @@ bool VerifyWhereType(vector<AttributeInfo> &attribute_info, vector<Where> &where
     return true;
 }
 
-
-int GetAttributeNum(vector<AttributeInfo> &attr_info, string &attribute_name) {
-    for(unsigned int i = 0; i < attr_info.size(); i++)
-        if(attr_info[i].name == attribute_name)
-            return i;
+int IsUnique(vector<AttributeInfo> &attribute_info, string attr_name) {
+    for(unsigned int i = 0; i < attribute_info.size(); i++)
+        if(attribute_info[i].name == attr_name)
+            return attribute_info[i].is_unique;
     return -1;
 }
 
-Result *API::ProcessQuery(Query *query)
-{
+string GetIndexName(vector<Index> &index, string &attr_name) {
+    for(unsigned int i = 0; i < index.size(); i++)
+        if(index[i].index_name == attr_name)
+            return index[i].index_name;
+    return "";
+}
+
+bool API::VerifyUnique(TableInfo *table_info, vector<string> &attribute_value) {
+    for(int i = 0; i < table_info->attribute_num; i++)
+        if(table_info->attribute_info[i].is_unique) {
+            Where where;
+            where.attribute_name = table_info->attribute_info[i].name;
+            where.comparison = EQUAL;
+            where.attribute_value = attribute_value[i];
+            string index_name = GetIndexName(table_info->index, table_info->attribute_info[i].name);
+            if(index_name.empty()) {
+                vector<Where> where_nonindex;
+                where_nonindex.push_back(where);
+                ResultSelect result;
+                record_manager_->SelectRecord(table_info, where_nonindex, &result);
+                if(!result.record.empty()) return false;
+            } else {
+                vector<WhereIndex> where_index;
+                where_index.push_back(WhereIndex(index_name, where));
+                vector<Pointer> pointer = index_manager_->FindIndex(where_index);
+                if(!pointer.empty()) return false;
+            }
+        }
+    return true;
+}
+
+void GetWhereApart(TableInfo *table_info, vector<Where> &where, vector<Where> &where_nonindex, vector<WhereIndex> &where_index) {
+    for(unsigned int i = 0; i < where.size(); i++) {
+        if(where[i].comparison == NOT_EQUAL) {
+            where_nonindex.push_back(where[i]);
+            continue;
+        }
+        unsigned int j;
+        for(j = 0; j < table_info->index.size(); j++)
+            if(where[i].attribute_name == table_info->index[j].attribute_name) {
+                where_index.push_back(WhereIndex(table_info->index[j].index_name, where[i]));
+                break;
+            }
+        if(j == table_info->index.size())
+            where_nonindex.push_back(where[i]);
+    }
+}
+
+Result *API::ProcessQuery(Query *query) {
     if(!query) return NULL;
     switch(query->type) {
         case CREATE_TABLE: {
@@ -106,7 +152,14 @@ Result *API::ProcessQuery(Query *query)
             QueryCreateIndex *q = (QueryCreateIndex *)query;
             TableInfo *table_info = catalog_manager_->GetTableInfo(q->table_name);
             if(table_info) {
-                if(index_manager_->CreateIndex(table_info, q->index_name, q->attribute_name)){
+                int is_unique = IsUnique(table_info->attribute_info, q->attribute_name);
+                if(is_unique == -1) {
+                    result->is_failed = true;
+                    result->message = "ERROR: Attribute '" + q->attribute_name + "' doesn't exist in Table '" + q->table_name +"'";
+                } else if(is_unique == 0) {
+                    result->is_failed = true;
+                    result->message = "ERROR: Attribute '" + q->attribute_name + "' in Table '" + q->table_name +"' is not unique";
+                } else if(index_manager_->CreateIndex(table_info, q->index_name, q->attribute_name)){
                     catalog_manager_->UpdateCatalog(table_info);
                     index_manager_->InsertAllIndex(table_info, q->index_name);
                     result->is_failed = false;
@@ -148,7 +201,15 @@ Result *API::ProcessQuery(Query *query)
                     result->message = "ERROR: Type mismatch between table '" + q->table_name + "' and WHERE value in SELETE";
                     return result;
                 }
-                record_manager_->SelectRecord(table_info, q, result);
+                vector<Where> where_nonindex;
+                vector<WhereIndex> where_index;
+                GetWhereApart(table_info, q->where, where_nonindex, where_index);
+                if(where_index.size()) {
+                    vector<Pointer> pointer = index_manager_->FindIndex(where_index);
+                    record_manager_->SelectRecordWithPointer(table_info, pointer, where_nonindex, result);
+                } else {
+                    record_manager_->SelectRecord(table_info, q->where, result);
+                }
                 if(result->record.empty()) {
                     result->message = "Empty set";
                 } else {
@@ -180,11 +241,13 @@ Result *API::ProcessQuery(Query *query)
                     result->message = "ERROR: Type mismatch between table '" + q->table_name + "' and INSERT value";
                     return result;
                 }
-                Pointer pointer = record_manager_->InsertRecord(table_info, q);
-                for(int i = 0; i < table_info->index_num; i++) {
-                    int attr_num = GetAttributeNum(table_info->attribute_info, table_info->index[i].attribute_name);
-                    index_manager_->InsertIndex(table_info->index[i].index_name, q->attribute_value[attr_num], pointer);
+                if(!VerifyUnique(table_info, q->attribute_value)) {
+                    result->is_failed = true;
+                    result->message = "ERROR: Try to insert a duplicate value of an unique attribute in Table '" + q->table_name + "'";
+                    return result;
                 }
+                Pointer pointer = record_manager_->InsertRecord(table_info, q);
+                index_manager_->InsertIndex(table_info, q->attribute_value, pointer);
                 catalog_manager_->UpdateCatalog(table_info);
                 result->is_failed = false;
                 result->message = "Record inserted successfully";
@@ -205,7 +268,18 @@ Result *API::ProcessQuery(Query *query)
                     result->message = "ERROR: Type mismatch between table '" + q->table_name + "' and WHERE value in DELETE";
                     return result;
                 }
-                int delete_num = record_manager_->DeleteRecord(table_info, q);
+                vector<Where> where_nonindex;
+                vector<WhereIndex> where_index;
+                GetWhereApart(table_info, q->where, where_nonindex, where_index);
+                int delete_num;
+                vector<vector<string> > record;
+                if(where_index.size()) {
+                    vector<Pointer> pointer = index_manager_->FindIndex(where_index);
+                    delete_num = record_manager_->DeleteRecordWithPointer(table_info, pointer, where_nonindex, record);
+                } else {
+                    delete_num = record_manager_->DeleteRecord(table_info, q, record);
+                }
+                index_manager_->DeleteIndex(table_info, record);
                 catalog_manager_->UpdateCatalog(table_info);
                 result->is_failed = false;
                 char buffer[256];

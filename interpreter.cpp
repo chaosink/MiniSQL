@@ -66,17 +66,17 @@ void PrintForm(ResultSelect *r) {
     PrintSeparator(column_length);
 }
 
-void Interpreter::RunWithInputStream(bool is_cmd, istream &is, string environment) {
+void Interpreter::RunWithInputStream(istream &is, string environment) {
     bool is_command = true;
     string command;
-    if(is_cmd) Print(PROMPT);
+    if(environment.empty()) Print(PROMPT);
     while(!is_quit_) {
         char ch;
         while(((ch = is.get()) == ' ' || ch == '\t') && is_command);
         if(is.eof()) break;
         if(ch == '\n') {
             if(!is_command) command += ch;
-            if(is_cmd) {
+            if(environment.empty()) {
                 if(is_command) Print(PROMPT);
                 else Print(PROMPT_PART);
             }
@@ -107,6 +107,7 @@ void Interpreter::RunWithInputStream(bool is_cmd, istream &is, string environmen
                 cout << parse_result.message << endl;
             command.clear();
             is_command = true;
+            //if(!environment.empty() && is_command) cin.getline(NULL, 0); // To pulse between query statements while execute script files
         } else {
             if(ch == '(' || ch == ')' || ch == ',') {
                 command += " ";
@@ -119,7 +120,7 @@ void Interpreter::RunWithInputStream(bool is_cmd, istream &is, string environmen
 }
 
 void Interpreter::Run() {
-    RunWithInputStream(true, cin, "");
+    RunWithInputStream(cin, "");
 }
 
 void Interpreter::Terminate() {
@@ -279,6 +280,13 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
                 string comparison;
                 string value;
                 iss >> attr_name >> comparison >> value;
+                if(iss.tellg() != -1 && value[0] == '\'' && (value[value.length() - 1] != '\'' || value.length() == 1)) {
+                    int start = iss.tellg();
+                    int end = command.find_first_of('\'', start);
+                    if(end == -1) end = command.length() - 1;
+                    value += command.substr(start, end - start + 1);
+                    iss.seekg(end + 1);
+                }
                 Where where;
                 where.attribute_name = attr_name;
                 if     (comparison == "=" ) where.comparison = EQUAL;
@@ -340,6 +348,13 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
                string comparison;
                string attr_value;
                iss >> attr_name >> comparison >> attr_value;
+               if(iss.tellg() != -1 && attr_value[0] == '\'' && (attr_value[attr_value.length() - 1] != '\'' || attr_value.length() == 1)) {
+                   int start = iss.tellg();
+                   int end = command.find_first_of('\'', start);
+                   if(end == -1) end = command.length() - 1;
+                   attr_value += command.substr(start, end - start + 1);
+                   iss.seekg(end + 1);
+               }
                Where where;
                where.attribute_name = attr_name;
                if     (comparison == "=" ) where.comparison = EQUAL;
@@ -378,9 +393,15 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
             ifs.close();
             return NULL;
         }
-        RunWithInputStream(false, ifs, file_name);
+        struct timeval time_start, time_end;
+        gettimeofday(&time_start, NULL);
+        RunWithInputStream(ifs, file_name);
+        gettimeofday(&time_end, NULL);
+        float time_used = time_end.tv_sec - time_start.tv_sec + (time_end.tv_usec - time_start.tv_usec) / 1000000.0;
         ifs.close();
-        parse_result->message = "Execfile completed";
+        char buffer[256];
+        sprintf(buffer, "Execfile completed (%f sec)", time_used);
+        parse_result->message = string(buffer);
         return NULL;
     }
     parse_result->message = "ERROR: Invalid SQL command type";

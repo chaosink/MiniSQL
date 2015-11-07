@@ -15,6 +15,7 @@ public:
     API();
     ~API();
     void Init(RecordManager *record_manager, IndexManager *index_manager, CatalogManager *catalog_manager);
+    bool VerifyUnique(TableInfo *table_info, vector<string> &attribute_value);
     Result *ProcessQuery(Query *query);
     void Terminate();
 };

@@ -33,7 +33,7 @@ void CatalogManager::CreateCatalog(QueryCreateTable *query) {
     int record_num_per_block = BLOCK_SIZE / record_size;
     ofs << query->table_name << ' ' << query->attribute.size() << ' ' << 1 << ' ' << 0 << ' ' << query->primary_key << ' ' << record_num_per_block << ' ' << record_size << ' ' << 0 << endl;
     for(it = query->attribute.begin(); it != query->attribute.end(); it++) {
-        ofs << it->name << ' ' << it->type << ' ' << it->char_length << ' ' << it->is_unique << endl;
+        ofs << it->name << ' ' << it->type << ' ' << it->char_length << ' ' << (it->is_unique || it->name == query->primary_key) << endl;
     }
     ofs << query->primary_key << ' ' << query->primary_key << endl;
     ofs.close();

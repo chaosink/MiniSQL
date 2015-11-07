@@ -24,7 +24,7 @@ public:
     ~Interpreter();
     void Init(API *api);
     void Run();
-    void RunWithInputStream(bool is_cmd, istream &is, string environment);
+    void RunWithInputStream(istream &is, string environment);
     Query *ParseQuery(string command, ParseResult *parse_result, string environment);
     void Terminate();
     void Print(string information);
