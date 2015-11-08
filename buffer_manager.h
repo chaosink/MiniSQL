@@ -5,7 +5,7 @@
 using namespace std;
 
 #define BLOCK_SIZE 4096
-#define DEFAULT_BLOCK_NUM 1000
+#define DEFAULT_BLOCK_NUM 100
 #define MAX_TIME 9223372036854775807
 
 struct BlockInfo {
