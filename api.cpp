@@ -1,5 +1,3 @@
-#include <iostream>
-#include <cstdio>
 #include "api.h"
 #include "record_manager.h"
 #include "index_manager.h"
@@ -7,6 +5,9 @@
 #include "query.h"
 #include "table.h"
 #include "result.h"
+#include <iostream>
+#include <cstdio>
+#include <algorithm>
 using namespace std;
 
 API::API() {
@@ -206,6 +207,7 @@ Result *API::ProcessQuery(Query *query) {
                 GetWhereApart(table_info, q->where, where_nonindex, where_index);
                 if(where_index.size()) {
                     vector<Pointer> pointer = index_manager_->FindIndex(where_index);
+                    sort(pointer.begin(), pointer.end());
                     record_manager_->SelectRecordWithPointer(table_info, pointer, where_nonindex, result);
                 } else {
                     record_manager_->SelectRecord(table_info, q->where, result);
@@ -241,11 +243,11 @@ Result *API::ProcessQuery(Query *query) {
                     result->message = "ERROR: Type mismatch between table '" + q->table_name + "' and INSERT value";
                     return result;
                 }
-                if(!VerifyUnique(table_info, q->attribute_value)) {
+                /*if(!VerifyUnique(table_info, q->attribute_value)) {
                     result->is_failed = true;
                     result->message = "ERROR: Try to insert a duplicate value of an unique attribute in Table '" + q->table_name + "'";
                     return result;
-                }
+                }*/
                 Pointer pointer = record_manager_->InsertRecord(table_info, q);
                 index_manager_->InsertIndex(table_info, q->attribute_value, pointer);
                 catalog_manager_->UpdateCatalog(table_info);
@@ -275,6 +277,7 @@ Result *API::ProcessQuery(Query *query) {
                 vector<vector<string> > record;
                 if(where_index.size()) {
                     vector<Pointer> pointer = index_manager_->FindIndex(where_index);
+                    sort(pointer.begin(), pointer.end());
                     delete_num = record_manager_->DeleteRecordWithPointer(table_info, pointer, where_nonindex, record);
                 } else {
                     delete_num = record_manager_->DeleteRecord(table_info, q, record);
