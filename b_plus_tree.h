@@ -125,6 +125,7 @@ Node<V, P> BPlusTree<V, P>::GetAnAvailableNode() {
     *node.num = node_num_ - 1;
     *node.state = EMPTY;
     *node.value_num = 0;
+    buffer_manager_.SetModified((char *)node.num);
     return node;
 }
 
@@ -246,9 +247,10 @@ void BPlusTree<V, P>::Insert(V value, P pointer) {
         return;
     }
     Node<V, P> leaf_node = FindLeafNode(value);
-    if(*leaf_node.value_num < MAX_VALUE_NUM)
+    if(*leaf_node.value_num < MAX_VALUE_NUM) {
         InsertInLeaf(leaf_node, value, pointer);
-    else {
+        buffer_manager_.SetModified((char *)leaf_node.num);
+    } else {
         buffer_manager_.Pin((char *)leaf_node.num);
         Node<V, P> node = GetAnAvailableNode();
         buffer_manager_.Unpin((char *)leaf_node.num);
@@ -282,18 +284,19 @@ void BPlusTree<V, P>::InsertInLeaf(Node<V, P> node, V value, P pointer) {
         node.value[0] = value;
         node.pointer[0] = pointer;
         (*node.value_num)++;
-    } else
-        for(int i = *node.value_num - 1; i >= 0; i--)
-            if(node.value[i] < value) {
-                for(int j = *node.value_num - 1; j >= i + 1; j--) {
-                    node.value[j + 1] = node.value[j];
-                    node.pointer[j + 1] = node.pointer[j];
-                }
-                node.value[i + 1] = value;
-                node.pointer[i + 1] = pointer;
-                (*node.value_num)++;
+        return;
+    }
+    for(int i = *node.value_num - 1; i >= 0; i--)
+        if(node.value[i] < value) {
+            for(int j = *node.value_num - 1; j >= i + 1; j--) {
+                node.value[j + 1] = node.value[j];
+                node.pointer[j + 1] = node.pointer[j];
             }
-    buffer_manager_.SetModified((char *)node.num);
+            node.value[i + 1] = value;
+            node.pointer[i + 1] = pointer;
+            (*node.value_num)++;
+            return;
+        }
 }
 
 template <class V, class P>
@@ -307,7 +310,6 @@ void BPlusTree<V, P>::InsertInNonleaf(Node<V, P> node, int pointer_left_num, V v
             }
             node.pointer[i + 1].num = pointer_right_num;
             node.value[i] = value;
-            buffer_manager_.SetModified((char *)node.num);
             return;
         }
 }
@@ -327,9 +329,10 @@ void BPlusTree<V, P>::InsertInParent(int node_left_num, V value, int node_right_
     }
     Node<V, P> parent_node = GetNode(queue_.back());
     queue_.pop_back();
-    if(*parent_node.value_num < MAX_VALUE_NUM)
+    if(*parent_node.value_num < MAX_VALUE_NUM) {
         InsertInNonleaf(parent_node, node_left_num, value, node_right_num);
-    else {
+        buffer_manager_.SetModified((char *)parent_node.num);
+    } else {
         buffer_manager_.Pin((char *)parent_node.num);
         Node<V, P> node = GetAnAvailableNode();
         buffer_manager_.Unpin((char *)parent_node.num);
