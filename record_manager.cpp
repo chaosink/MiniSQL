@@ -259,4 +259,3 @@ int RecordManager::DeleteRecordWithPointer(TableInfo *table_info, vector<Pointer
     }
     return delete_num;
 }
-
