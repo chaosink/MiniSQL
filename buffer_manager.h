@@ -5,7 +5,7 @@
 using namespace std;
 
 #define BLOCK_SIZE 4096
-#define DEFAULT_BLOCK_NUM 2
+#define DEFAULT_BLOCK_NUM 1000
 #define MAX_TIME 9223372036854775807
 
 struct BlockInfo {
@@ -35,6 +35,7 @@ public:
     ~BufferManager();
     void Init();
     void Init(int block_num);
+    int block_num();
     void Pin(char *block_address);
     void Unpin(char *block_address);
     void SetModified(char *block_address);

@@ -21,6 +21,10 @@ void BufferManager::Init(int block_num) {
     block_info_ = new BlockInfo[block_num_];
 }
 
+int BufferManager::block_num() {
+    return block_num_;
+}
+
 char *BufferManager::GetFileBlock(string file_name, int file_block_num) {
     for(int i = 0; i < block_num_; i++)
         if(block_info_[i].file_name == file_name && block_info_[i].file_block_num == file_block_num) {

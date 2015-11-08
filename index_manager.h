@@ -6,6 +6,7 @@
 #include "table.h"
 #include "query.h"
 #include <string>
+#include <map>
 using namespace std;
 
 struct IndexInfo {
@@ -17,6 +18,9 @@ struct IndexInfo {
     int root;
     int block_num;
     int empty_block_num;
+    IndexInfo() {
+        index_name = "";
+    }
 };
 
 struct WhereIndex : Where{
@@ -31,6 +35,7 @@ struct WhereIndex : Where{
 
 class IndexManager {
     BufferManager *buffer_manager_;
+    map<string, IndexInfo> index_info_;
     void Insert(string index_name, string attr_value, Pointer pointer);
     void Delete(string index_name, string attr_value);
 public:

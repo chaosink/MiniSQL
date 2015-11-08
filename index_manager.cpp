@@ -43,14 +43,21 @@ bool IndexManager::CreateIndex(TableInfo *table_info, string &index_name, string
 }
 
 IndexInfo *IndexManager::GetIndexInfo(string index_name) {
+    if(!index_info_[index_name].index_name.empty()) {
+        IndexInfo *index_info = new IndexInfo(index_info_[index_name]);
+        return index_info;
+    }
     ifstream ifs((index_name + ".idxinfo").c_str());
     if(!ifs.is_open()) return NULL;
     IndexInfo *index_info = new IndexInfo;
     ifs >> index_info->index_name >> index_info->table_name >> index_info->attribute_name >> index_info->type >> index_info->char_length >> index_info->root >> index_info->block_num >> index_info->empty_block_num;
+    index_info_[index_name] = *index_info;
     return index_info;
 }
 
 void IndexManager::UpdateIndexInfo(IndexInfo *index_info) {
+    index_info_[index_info->index_name] = *index_info;
+    return;
     ofstream ofs((index_info->index_name + ".idxinfo").c_str());
     ofs << index_info->index_name << ' ' << index_info->table_name << ' ' << index_info->attribute_name << ' ' << index_info->type << ' ' << index_info->char_length << ' ' << index_info->root << ' ' << index_info->block_num << ' ' << index_info->empty_block_num;
     ofs.close();
@@ -204,8 +211,12 @@ void IndexManager::InsertAllIndex(TableInfo *table_info, string index_name) {
         for(int i = 0; i < table_info->block_num; i++) {
             char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
             for(int j = 0; j < table_info->record_num_per_block; j++)
-                if(block[j * table_info->record_size])
+                if(block[j * table_info->record_size]) {
+                    if(buffer_manager_->block_num() != 2) buffer_manager_->Pin(block);
                     b_plus_tree.Insert(*(int *)(block + j * table_info->record_size + offset), Pointer(i, j * table_info->record_size));
+                    if(buffer_manager_->block_num() == 2) block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
+                    else buffer_manager_->Unpin(block);
+                }
         }
     } else if(index_info->type == FLOAT) {
         BPlusTree<float, Pointer> b_plus_tree = BPlusTree<float, Pointer>(index_info, *buffer_manager_);
@@ -251,6 +262,7 @@ void IndexManager::DeleteIndex(TableInfo *table_info, vector<vector<string> > &r
 }
 
 bool IndexManager::DropIndex(string &index_name) {
+    index_info_.erase(index_name);
     ifstream ifs((index_name + ".idx").c_str());
     if(ifs.is_open()) {
         ifs.close();
@@ -269,6 +281,13 @@ bool IndexManager::DropAllIndex(vector<Index> &index) {
     return true;
 }
 
-void IndexManager::Terminate() {
+void SaveIndex(IndexInfo *index_info) {
+    ofstream ofs((index_info->index_name + ".idxinfo").c_str());
+    ofs << index_info->index_name << ' ' << index_info->table_name << ' ' << index_info->attribute_name << ' ' << index_info->type << ' ' << index_info->char_length << ' ' << index_info->root << ' ' << index_info->block_num << ' ' << index_info->empty_block_num;
+    ofs.close();
+}
 
+void IndexManager::Terminate() {
+    for(map<string, IndexInfo>::iterator it = index_info_.begin(); it != index_info_.end(); it++)
+        SaveIndex(&it->second);
 }
