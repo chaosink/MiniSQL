@@ -1,10 +1,8 @@
-#include <iostream>
+#include "b_plus_tree.h"
+#include "index_manager.h"
 #include <fstream>
-#include <cstring>
 #include <cstdlib>
 #include <algorithm>
-#include "index_manager.h"
-#include "b_plus_tree.h"
 using namespace std;
 
 IndexManager::IndexManager() {
@@ -46,9 +44,7 @@ bool IndexManager::CreateIndex(TableInfo *table_info, string &index_name, string
 
 IndexInfo *IndexManager::GetIndexInfo(string index_name) {
     ifstream ifs((index_name + ".idxinfo").c_str());
-    if(!ifs.is_open()) {
-        return NULL;
-    }
+    if(!ifs.is_open()) return NULL;
     IndexInfo *index_info = new IndexInfo;
     ifs >> index_info->index_name >> index_info->table_name >> index_info->attribute_name >> index_info->type >> index_info->char_length >> index_info->root >> index_info->block_num >> index_info->empty_block_num;
     return index_info;

@@ -1,6 +1,6 @@
+#include "buffer_manager.h"
 #include <fstream>
 #include <sys/time.h>
-#include "buffer_manager.h"
 using namespace std;
 
 BufferManager::BufferManager() {
@@ -19,8 +19,6 @@ void BufferManager::Init(int block_num) {
     block_num_ = block_num;
     block_ = (char (*)[BLOCK_SIZE])new char[block_num_ * BLOCK_SIZE];
     block_info_ = new BlockInfo[block_num_];
-    for(int i = 0; i < block_num_; i++)
-        block_info_[i].time = 0;
 }
 
 char *BufferManager::GetFileBlock(string file_name, int file_block_num) {
@@ -42,6 +40,10 @@ void BufferManager::Pin(char *block_address) {
 
 void BufferManager::Unpin(char *block_address) {
     block_info_[(block_address - (char *)block_) / BLOCK_SIZE].is_pined = 0;
+}
+
+void BufferManager::SetModified(char *block_address) {
+    block_info_[(block_address - (char *)block_) / BLOCK_SIZE].is_modified = 1;
 }
 
 int BufferManager::GetAnAvailableBufferBlock() {
@@ -68,7 +70,7 @@ void BufferManager::ReadFileBlock(string file_name, int file_block_num, int bloc
     struct timeval time;
     gettimeofday(&time, NULL);
     block_info_[block_num].time = time.tv_sec * 1000000 + time.tv_usec;
-    block_info_[block_num].is_modified = 1;
+    block_info_[block_num].is_modified = 0;
     block_info_[block_num].is_pined = 0;
 }
 

@@ -1,13 +1,13 @@
-#include <iostream>
-#include <iomanip>
+#include "interpreter.h"
+#include "api.h"
+#include "result.h"
+#include "query.h"
 #include <string>
+#include <iomanip>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <sys/time.h>
-#include "interpreter.h"
-#include "query.h"
-#include "api.h"
-#include "result.h"
 using namespace std;
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -22,8 +22,9 @@ Interpreter::~Interpreter() {
 
 }
 
-void Interpreter::Init(API *api) {
+void Interpreter::Init(API *api, const char *dbms_info) {
     api_ = api;
+    DBMS_INFORMATION = dbms_info;
 }
 
 void Trim(string &command) {
@@ -69,7 +70,7 @@ void PrintForm(ResultSelect *r) {
 void Interpreter::RunWithInputStream(istream &is, string environment) {
     bool is_command = true;
     string command;
-    if(environment.empty()) Print(PROMPT);
+    if(environment.empty()) cout << PROMPT;
     while(!is_quit_) {
         char ch;
         while(((ch = is.get()) == ' ' || ch == '\t') && is_command);
@@ -77,12 +78,11 @@ void Interpreter::RunWithInputStream(istream &is, string environment) {
         if(ch == '\n') {
             if(!is_command) command += ch;
             if(environment.empty()) {
-                if(is_command) Print(PROMPT);
-                else Print(PROMPT_PART);
+                if(is_command) cout << PROMPT;
+                else cout << PROMPT_PART;
             }
         } else if(ch == ';') {
             Trim(command);
-            //cout << "'" << command << "'" << endl;
             Result *result = NULL;
             ParseResult parse_result;
             Query *query = ParseQuery(command, &parse_result, environment);
@@ -120,15 +120,12 @@ void Interpreter::RunWithInputStream(istream &is, string environment) {
 }
 
 void Interpreter::Run() {
+    cout << DBMS_INFORMATION;
     RunWithInputStream(cin, "");
 }
 
 void Interpreter::Terminate() {
 
-}
-
-void Interpreter::Print(string information) {
-    cout << information;
 }
 
 void ReplaceParenthesesWithSpace(string *str) {

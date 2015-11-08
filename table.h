@@ -2,7 +2,7 @@
 #define TABLE_H
 
 #include <vector>
-#include "query.h"
+#include <string>
 using namespace std;
 
 struct AttributeInfo {

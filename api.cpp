@@ -2,10 +2,9 @@
 #include "record_manager.h"
 #include "index_manager.h"
 #include "catalog_manager.h"
-#include "query.h"
-#include "table.h"
 #include "result.h"
-#include <iostream>
+#include "table.h"
+#include "query.h"
 #include <cstdio>
 #include <algorithm>
 using namespace std;
@@ -242,11 +241,11 @@ Result *API::ProcessQuery(Query *query) {
                     result->message = "ERROR: Type mismatch between table '" + q->table_name + "' and INSERT value";
                     return result;
                 }
-                /*if(!VerifyUnique(table_info, q->attribute_value)) {
+                if(!VerifyUnique(table_info, q->attribute_value)) {
                     result->is_failed = true;
                     result->message = "ERROR: Try to insert a duplicate value of an unique attribute in Table '" + q->table_name + "'";
                     return result;
-                }*/
+                }
                 Pointer pointer = record_manager_->InsertRecord(table_info, q);
                 index_manager_->InsertIndex(table_info, q->attribute_value, pointer);
                 catalog_manager_->UpdateCatalog(table_info);

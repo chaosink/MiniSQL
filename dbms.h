@@ -1,14 +1,12 @@
 #ifndef DBMS_H
 #define DBMS_H
 
-#include <string>
 #include "interpreter.h"
 #include "api.h"
 #include "record_manager.h"
 #include "index_manager.h"
 #include "catalog_manager.h"
 #include "buffer_manager.h"
-using namespace std;
 
 #define _DBMS_INFORMATION "Welcome to MiniSQL!\nVersion: 0.1\n\n"
 
@@ -26,8 +24,6 @@ public:
     void Init();
     void Run();
     void Terminate();
-    void PrintDBMSInformation();
-    void Print(string information);
 };
 
 #endif // DBMS_H

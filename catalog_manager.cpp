@@ -1,7 +1,6 @@
-#include <fstream>
-#include <iostream>
-#include "catalog_manager.h"
 #include "buffer_manager.h"
+#include "catalog_manager.h"
+#include <fstream>
 using namespace std;
 
 CatalogManager::CatalogManager() {

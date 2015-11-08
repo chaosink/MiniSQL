@@ -1,14 +1,11 @@
+#include "record_manager.h"
+#include "result.h"
+#include "table.h"
+#include "query.h"
 #include <fstream>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "record_manager.h"
-#include "query.h"
-#include "table.h"
-#include "result.h"
 using namespace std;
 
 RecordManager::RecordManager() {
@@ -59,21 +56,21 @@ void RecordManager::AddOneBlock(string table_name) {
 }
 
 Pointer RecordManager::InsertRecord(TableInfo *table_info, QueryInsert *query) {
-    //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     if(table_info->block_num * table_info->record_num_per_block == table_info->record_num) {
         AddOneBlock(table_info->table_name);
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", table_info->block_num);
         table_info->block_num++;
         WriteRecord(table_info->attribute_info, query->attribute_value, block);
+        buffer_manager_->SetModified(block);
         table_info->record_num++;
         return Pointer(table_info->block_num - 1, 0);
     }
     for(int i = table_info->block_num - 1; i >= 0; i--) {
-//    for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
         for(int j = 0; j < table_info->record_num_per_block; j++)
             if(!block[j * table_info->record_size]) {
                 WriteRecord(table_info->attribute_info, query->attribute_value, block + j * table_info->record_size);
+                buffer_manager_->SetModified(block);
                 table_info->record_num++;
                 return Pointer(i, j * table_info->record_size);
             }
@@ -87,23 +84,19 @@ void RecordManager::WriteRecord(vector<AttributeInfo> &attr_info, vector<string>
     for(int i = 0; i < (int)attr_info.size() ; i++)
         switch(attr_info[i].type) {
             case CHAR:
-                //cout << attr_value[i] << " ";
                 memcpy(address, attr_value[i].c_str() + 1, attr_value[i].size() - 2);
                 memset(address + attr_value[i].size() - 2, 0, attr_info[i].char_length - attr_value[i].size() + 2);
                 address += attr_info[i].char_length;
                 break;
             case INT:
-                //cout << attr_value[i] << " ";
                 *(int *)address = atoi(attr_value[i].c_str());
                 address += 4;
                 break;
             case FLOAT:
-                //cout << attr_value[i] << " ";
                 *(float *)address = atof(attr_value[i].c_str());
                 address += 4;
                 break;
         }
-    //cout << endl;
 }
 
 template <typename T>
@@ -138,7 +131,6 @@ bool SatisfyTemplate(T a, T b, ComparisonType comparison) {
 }
 
 bool Satisfy(int &type, string &attr_value, Where &where) {
-    //cout << attr_value << " " << where.attribute_value << endl;
     if(type == CHAR) {
         string a = "'" + attr_value + "'";
         string b = where.attribute_value;
@@ -166,7 +158,6 @@ bool SatisfyWhere(vector<AttributeInfo> &attr_info, vector<string> &attr_value, 
 }
 
 void RecordManager::SelectRecord(TableInfo *table_info, vector<Where> &where, ResultSelect *result) {
-    //printf("%s %d %d %s %d %d %d\n", table_info->table_name.c_str(), table_info->attribute_num, table_info->record_num, table_info->primary_key.c_str(), table_info->record_num_per_block, table_info->record_size, table_info->block_num);
     for(int i = 0; i < table_info->block_num; i++) {
         char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
         for(int j = 0; j < table_info->record_num_per_block; j++)
@@ -198,7 +189,6 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
                 memcpy(s, address, attr_info[i].char_length);
                 string str(s);
                 attr_value.push_back(str);
-                //cout << str << " ";
                 address += attr_info[i].char_length;
                 break;
             }
@@ -207,7 +197,6 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
                 sprintf(s, "%d", *((int *)address));
                 string str(s);
                 attr_value.push_back(str);
-                //cout  << str << " ";
                 address += 4;
                 break;
             }
@@ -216,13 +205,11 @@ void RecordManager::ReadRecord(vector<AttributeInfo> &attr_info, vector<string> 
                 sprintf(s, "%f", *((float *)address));
                 string str(s);
                 attr_value.push_back(str);
-                //cout << str << " ";
                 address += 4;
                 break;
             }
         }
     }
-    //cout << endl;
 }
 
 int RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query, vector<vector<string> > &record) {
@@ -235,6 +222,7 @@ int RecordManager::DeleteRecord(TableInfo *table_info, QueryDelete *query, vecto
                 ReadRecord(table_info->attribute_info, attribute_value, block + j * table_info->record_size);
                 if(SatisfyWhere(table_info->attribute_info, attribute_value, query->where)) {
                     block[j * table_info->record_size] = 0;
+                    buffer_manager_->SetModified(block);
                     table_info->record_num--;
                     delete_num++;
                     record.push_back(attribute_value);
@@ -252,6 +240,7 @@ int RecordManager::DeleteRecordWithPointer(TableInfo *table_info, vector<Pointer
         ReadRecord(table_info->attribute_info, attribute_value, block + pointer[i].offset);
         if(SatisfyWhere(table_info->attribute_info, attribute_value, where_nonindex)) {
             block[pointer[i].offset] = 0;
+            buffer_manager_->SetModified(block);
             table_info->record_num--;
             delete_num++;
             record.push_back(attribute_value);

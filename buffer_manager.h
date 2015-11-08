@@ -14,6 +14,13 @@ struct BlockInfo {
     long time;
     bool is_modified;
     bool is_pined;
+    BlockInfo() {
+        file_name = "";
+        file_block_num = -1;
+        time = 0;
+        is_modified = 0;
+        is_pined = 0;
+    }
 };
 
 class BufferManager {
@@ -30,6 +37,7 @@ public:
     void Init(int block_num);
     void Pin(char *block_address);
     void Unpin(char *block_address);
+    void SetModified(char *block_address);
     char *GetFileBlock(string file_name, int file_block_num);
     void DeleteBlock(string file_name);
     void Terminate();

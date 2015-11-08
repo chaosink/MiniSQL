@@ -2,9 +2,11 @@
 #define INDEXMANAGER_H
 
 #include "buffer_manager.h"
-#include "query.h"
-#include "table.h"
 #include "value_pointer.h"
+#include "table.h"
+#include "query.h"
+#include <string>
+using namespace std;
 
 struct IndexInfo {
     string index_name;
@@ -17,24 +19,33 @@ struct IndexInfo {
     int empty_block_num;
 };
 
+struct WhereIndex : Where{
+    string index_name;
+    WhereIndex(string &index_name, Where &where) {
+        this->index_name = index_name;
+        this->attribute_name = where.attribute_name;
+        this->comparison = where.comparison;
+        this->attribute_value = where.attribute_value;
+    }
+};
+
 class IndexManager {
     BufferManager *buffer_manager_;
+    void Insert(string index_name, string attr_value, Pointer pointer);
+    void Delete(string index_name, string attr_value);
 public:
     IndexManager();
     ~IndexManager();
     void Init(BufferManager *buffer_manager);
+    bool CreateIndex(TableInfo *table_info, string &index_name, string &attr_name);
     IndexInfo *GetIndexInfo(string index_name);
     void UpdateIndexInfo(IndexInfo *index_info);
-    bool CreateIndex(TableInfo *table_info, string &index_name, string &attr_name);
     vector<Pointer> FindIndex(vector<WhereIndex> &where_index);
-    void Insert(string index_name, string attr_value, Pointer pointer);
     void InsertIndex(TableInfo *table_info, vector<string> &attr_value, Pointer pointer);
     void InsertAllIndex(TableInfo *table_info, string index_name);
-    void Delete(string index_name, string attr_value);
     void DeleteIndex(TableInfo *table_info, vector<vector<string> > &record);
     bool DropIndex(string &index_name);
     bool DropAllIndex(vector<Index> &index);
-    string GetIndexTableName(string &index_name);
     void Terminate();
 };
 

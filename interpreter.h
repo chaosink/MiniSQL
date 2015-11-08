@@ -1,9 +1,9 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include <string>
 #include "api.h"
 #include "query.h"
+#include <string>
 using namespace std;
 
 #define _PROMPT "MiniSQL> "
@@ -19,16 +19,15 @@ class Interpreter {
     const char *PROMPT_PART;
     bool is_quit_;
     API *api_;
+    const char *DBMS_INFORMATION;
+    void RunWithInputStream(istream &is, string environment);
+    Query *ParseQuery(string command, ParseResult *parse_result, string environment);
 public:
     Interpreter();
     ~Interpreter();
-    void Init(API *api);
+    void Init(API *api, const char *dbms_info);
     void Run();
-    void RunWithInputStream(istream &is, string environment);
-    Query *ParseQuery(string command, ParseResult *parse_result, string environment);
     void Terminate();
-    void Print(string information);
-    void delete_space(string str);
 };
 
 #endif // INTERPRETER_H

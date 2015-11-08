@@ -1,11 +1,11 @@
 #ifndef B_PLUS_TREE_HPP
 #define B_PLUS_TREE_HPP
 
+#include "index_manager.h"
 #include "buffer_manager.h"
-#include "table.h"
 #include <fstream>
 #include <vector>
-#include <iostream>
+//#include <iostream> // To use cerr
 
 #define LAST_POINTER (pointer_num_ - 1)
 #define MAX_VALUE_NUM (pointer_num_ - 1)
@@ -96,7 +96,7 @@ void BPlusTree<V, P>::AddOneBlock() {
 template <class V, class P>
 Node<V, P> BPlusTree<V, P>::GetNode(int node_num) {
     if(node_num >= node_num_ || node_num < 0) {
-        std::cerr << "Node " << node_num << " doesn't exist!" << std::endl;
+        //std::cerr << "Node " << node_num << " doesn't exist!" << std::endl;
         return Node<V, P>();
     }
     char *block = buffer_manager_.GetFileBlock(name_ + ".idx", node_num);
@@ -241,6 +241,7 @@ void BPlusTree<V, P>::Insert(V value, P pointer) {
         node.value[0] = value;
         node.pointer[0] = pointer;
         node.pointer[LAST_POINTER].num = -1;
+        buffer_manager_.SetModified((char *)node.num);
         root_ = *node.num;
         return;
     }
@@ -265,6 +266,8 @@ void BPlusTree<V, P>::Insert(V value, P pointer) {
         for(int i = mid; i < pointer_num_; i++) node.pointer[i - mid] = swapper_.pointer[i];
         *leaf_node.value_num = mid;
         *node.value_num = pointer_num_ - mid;
+        buffer_manager_.SetModified((char *)node.num);
+        buffer_manager_.SetModified((char *)leaf_node.num);
         InsertInParent(*leaf_node.num, node.value[0], *node.num);
     }
 }
@@ -279,19 +282,18 @@ void BPlusTree<V, P>::InsertInLeaf(Node<V, P> node, V value, P pointer) {
         node.value[0] = value;
         node.pointer[0] = pointer;
         (*node.value_num)++;
-        return;
-    }
-    for(int i = *node.value_num - 1; i >= 0; i--)
-        if(node.value[i] < value) {
-            for(int j = *node.value_num - 1; j >= i + 1; j--) {
-                node.value[j + 1] = node.value[j];
-                node.pointer[j + 1] = node.pointer[j];
+    } else
+        for(int i = *node.value_num - 1; i >= 0; i--)
+            if(node.value[i] < value) {
+                for(int j = *node.value_num - 1; j >= i + 1; j--) {
+                    node.value[j + 1] = node.value[j];
+                    node.pointer[j + 1] = node.pointer[j];
+                }
+                node.value[i + 1] = value;
+                node.pointer[i + 1] = pointer;
+                (*node.value_num)++;
             }
-            node.value[i + 1] = value;
-            node.pointer[i + 1] = pointer;
-            (*node.value_num)++;
-            return;
-        }
+    buffer_manager_.SetModified((char *)node.num);
 }
 
 template <class V, class P>
@@ -305,6 +307,7 @@ void BPlusTree<V, P>::InsertInNonleaf(Node<V, P> node, int pointer_left_num, V v
             }
             node.pointer[i + 1].num = pointer_right_num;
             node.value[i] = value;
+            buffer_manager_.SetModified((char *)node.num);
             return;
         }
 }
@@ -318,6 +321,7 @@ void BPlusTree<V, P>::InsertInParent(int node_left_num, V value, int node_right_
         node.pointer[0].num = node_left_num;
         node.value[0] = value;
         node.pointer[1].num = node_right_num;
+        buffer_manager_.SetModified((char *)node.num);
         root_ = *node.num;
         return;
     }
@@ -341,6 +345,8 @@ void BPlusTree<V, P>::InsertInParent(int node_left_num, V value, int node_right_
         for(int i = mid + 1; i < pointer_num_ + 1; i++) node.pointer[i - mid - 1] = swapper_.pointer[i];
         *parent_node.value_num = mid;
         *node.value_num = pointer_num_ - mid - 1;
+        buffer_manager_.SetModified((char *)node.num);
+        buffer_manager_.SetModified((char *)parent_node.num);
         InsertInParent(*parent_node.num, swapper_.value[mid], *node.num);
     }
 }
@@ -349,7 +355,7 @@ template <class V, class P>
 void BPlusTree<V, P>::Delete(V value) {
     Node<V, P> node = FindLeafNode(value);
     if(!node.num) {
-        std::cerr << "The tree is empty. Nothing to delete." << std::endl;
+        //std::cerr << "The tree is empty. Nothing to delete." << std::endl;
         return;
     }
     DeleteEntry(node, value);
@@ -392,6 +398,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                 sibling_node.pointer[LAST_POINTER] = node.pointer[LAST_POINTER];
                 *node.state = EMPTY;
                 empty_node_num_++;
+                buffer_manager_.SetModified((char *)sibling_node.num);
                 Node<V, P> parent_node = GetNode(queue_.back());
                 queue_.pop_back();
                 DeleteEntry(parent_node, seperator);
@@ -406,6 +413,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                     node.value[0] = sibling_node.value[*sibling_node.value_num - 1];
                     (*node.value_num)++;
                     (*sibling_node.value_num)--;
+                    buffer_manager_.SetModified((char *)sibling_node.num);
                     ReplaceSeperator(queue_.back(), seperator, node.value[0]);
                 } else {
                     node.pointer[*node.value_num] = sibling_node.pointer[0];
@@ -416,6 +424,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                         sibling_node.value[i] = sibling_node.value[i + 1];
                     }
                     (*sibling_node.value_num)--;
+                    buffer_manager_.SetModified((char *)sibling_node.num);
                     ReplaceSeperator(queue_.back(), seperator, sibling_node.value[0]);
                 }
             }
@@ -445,6 +454,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                 sibling_node.pointer[*sibling_node.value_num] = node.pointer[*node.value_num];
                 *node.state = EMPTY;
                 empty_node_num_++;
+                buffer_manager_.SetModified((char *)sibling_node.num);
                 Node<V, P> parent_node = GetNode(queue_.back());
                 queue_.pop_back();
                 DeleteEntry(parent_node, seperator);
@@ -460,6 +470,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                     node.value[0] = seperator;
                     (*node.value_num)++;
                     (*sibling_node.value_num)--;
+                    buffer_manager_.SetModified((char *)sibling_node.num);
                     ReplaceSeperator(queue_.back(), seperator, sibling_node.value[*sibling_node.value_num]);
                 } else {
                     V seperator_new = sibling_node.value[0];
@@ -472,6 +483,7 @@ void BPlusTree<V, P>::DeleteEntry(Node<V, P> node, V value) {
                     }
                     (*sibling_node.value_num)--;
                     sibling_node.pointer[*sibling_node.value_num] = sibling_node.pointer[*sibling_node.value_num + 1];
+                    buffer_manager_.SetModified((char *)sibling_node.num);
                     ReplaceSeperator(queue_.back(), seperator, seperator_new);
                 }
             }
@@ -491,6 +503,7 @@ void BPlusTree<V, P>::DeleteInNode(Node<V, P> node, V value) {
                 node.value[j] = node.value[j + 1];
             }
             (*node.value_num)--;
+            buffer_manager_.SetModified((char *)node.num);
             return;
         }
 }
@@ -518,6 +531,7 @@ void BPlusTree<V, P>::ReplaceSeperator(int node_num, V value_old, V value_new) {
     for(int i = 0; i < *node.value_num; i++)
         if(node.value[i] == value_old) {
             node.value[i] = value_new;
+            buffer_manager_.SetModified((char *)node.num);
             return;
         }
 }

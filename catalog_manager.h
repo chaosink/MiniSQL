@@ -2,8 +2,8 @@
 #define CATALOGMANAGER_H
 
 #include "buffer_manager.h"
-#include "query.h"
 #include "table.h"
+#include "query.h"
 
 class CatalogManager {
     BufferManager *buffer_manager_;
@@ -12,11 +12,11 @@ public:
     ~CatalogManager();
     void Init(BufferManager *buffer_manager);
     void CreateCatalog(QueryCreateTable *query);
+    TableInfo *GetTableInfo(string table_name);
     void UpdateCatalog(TableInfo *table_info);
     void DropCatalog(string table_name);
     void DropIndex(string &table_name, string &index_name);
     void Terminate();
-    TableInfo *GetTableInfo(string table_name);
 };
 
 #endif // CATALOGMANAGER_H
