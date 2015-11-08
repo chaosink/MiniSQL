@@ -4,9 +4,11 @@
 #include "buffer_manager.h"
 #include "table.h"
 #include "query.h"
+#include <map>
 
 class CatalogManager {
     BufferManager *buffer_manager_;
+    map<string, TableInfo> table_info_;
 public:
     CatalogManager();
     ~CatalogManager();

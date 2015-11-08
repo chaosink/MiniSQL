@@ -227,7 +227,6 @@ Result *API::ProcessQuery(Query *query) {
                 result->is_failed = true;
                 result->message = "ERROR: Table '" + q->table_name + "' doesn't exist";
             }
-            delete table_info;
             return result;
             break;
         }

@@ -28,6 +28,9 @@ struct TableInfo {
 	int block_num;
 	vector<AttributeInfo> attribute_info;
     vector<Index> index;
+    TableInfo() {
+        table_name = "";
+    }
 };
 
 #endif // TABLE_H

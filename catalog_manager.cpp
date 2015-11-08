@@ -1,6 +1,7 @@
 #include "buffer_manager.h"
 #include "catalog_manager.h"
 #include <fstream>
+#include <iostream>
 using namespace std;
 
 CatalogManager::CatalogManager() {
@@ -13,10 +14,6 @@ CatalogManager::~CatalogManager() {
 
 void CatalogManager::Init(BufferManager *buffer_manager) {
     buffer_manager_ = buffer_manager;
-}
-
-void CatalogManager::Terminate() {
-
 }
 
 void CatalogManager::CreateCatalog(QueryCreateTable *query) {
@@ -39,10 +36,15 @@ void CatalogManager::CreateCatalog(QueryCreateTable *query) {
 }
 
 void CatalogManager::DropCatalog(string table_name) {
+    table_info_.erase(table_name);
     remove((table_name + ".log").c_str());
 }
 
 TableInfo *CatalogManager::GetTableInfo(string table_name) {
+    if(!table_info_[table_name].table_name.empty()) {
+        TableInfo *table_info = new TableInfo(table_info_[table_name]);
+        return table_info;
+    }
     ifstream ifs((table_name + ".log").c_str());
     if(!ifs.is_open()) {
         return NULL;
@@ -59,10 +61,13 @@ TableInfo *CatalogManager::GetTableInfo(string table_name) {
         ifs >> index.index_name >> index.attribute_name;
         table_info->index.push_back(index);
     }
+    table_info_[table_name] = *table_info;
     return table_info;
 }
 
 void CatalogManager::UpdateCatalog(TableInfo *table_info) {
+    table_info_[table_info->table_name] = *table_info;
+    return;
     ofstream ofs((table_info->table_name + ".log").c_str());
     ofs << table_info->table_name << ' ' << table_info->attribute_num << ' ' << table_info->index_num << ' ' << table_info->record_num << ' ' << table_info->primary_key << ' ' << table_info->record_num_per_block << ' ' << table_info->record_size << ' ' << table_info->block_num << endl;
     vector<AttributeInfo>::iterator it;
@@ -84,4 +89,22 @@ void CatalogManager::DropIndex(string &table_name, string &index_name) {
             break;
         }
     UpdateCatalog(table_info);
+}
+
+void SaveCatalog(TableInfo *table_info) {
+    ofstream ofs((table_info->table_name + ".log").c_str());
+    ofs << table_info->table_name << ' ' << table_info->attribute_num << ' ' << table_info->index_num << ' ' << table_info->record_num << ' ' << table_info->primary_key << ' ' << table_info->record_num_per_block << ' ' << table_info->record_size << ' ' << table_info->block_num << endl;
+    vector<AttributeInfo>::iterator it;
+    for(it = table_info->attribute_info.begin(); it != table_info->attribute_info.end(); it++) {
+        ofs << it->name << ' ' << it->type << ' ' << it->char_length << ' ' << it->is_unique << endl;
+    }
+    for(int i = 0; i < table_info->index_num; i++) {
+        ofs << table_info->index[i].index_name << ' ' << table_info->index[i].attribute_name << endl;
+    }
+    ofs.close();
+}
+
+void CatalogManager::Terminate() {
+    for(map<string, TableInfo>::iterator it = table_info_.begin(); it != table_info_.end(); it++)
+        SaveCatalog(&it->second);
 }
