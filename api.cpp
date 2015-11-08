@@ -209,9 +209,8 @@ Result *API::ProcessQuery(Query *query) {
                     vector<Pointer> pointer = index_manager_->FindIndex(where_index);
                     sort(pointer.begin(), pointer.end());
                     record_manager_->SelectRecordWithPointer(table_info, pointer, where_nonindex, result);
-                } else {
+                } else
                     record_manager_->SelectRecord(table_info, q->where, result);
-                }
                 if(result->record.empty()) {
                     result->message = "Empty set";
                 } else {
@@ -279,9 +278,8 @@ Result *API::ProcessQuery(Query *query) {
                     vector<Pointer> pointer = index_manager_->FindIndex(where_index);
                     sort(pointer.begin(), pointer.end());
                     delete_num = record_manager_->DeleteRecordWithPointer(table_info, pointer, where_nonindex, record);
-                } else {
+                } else
                     delete_num = record_manager_->DeleteRecord(table_info, q, record);
-                }
                 index_manager_->DeleteIndex(table_info, record);
                 catalog_manager_->UpdateCatalog(table_info);
                 result->is_failed = false;
