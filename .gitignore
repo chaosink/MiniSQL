@@ -29,3 +29,6 @@
 
 # User file
 MiniSQL.pro.user*
+
+# Directories
+bin/
