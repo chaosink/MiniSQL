@@ -27,8 +27,8 @@
 *.out
 *.app
 
-# User file
-MiniSQL.pro.user*
-
 # Directories
 bin/
+
+# User files
+MiniSQL.pro.user
