@@ -316,6 +316,11 @@ Query *Interpreter::ParseQuery(string command, ParseResult *parse_result, string
         query->table_name = table_name;
         int start = command.find_first_of('(');
         int end = start;
+        if(end == -1) {
+            parse_result->message = "ERROR: Invalid sytax in INSERT";
+            delete query;
+            return NULL;
+        }
         while(end != -1) {
             end++;
             start = command.find_first_not_of(' ', end);
