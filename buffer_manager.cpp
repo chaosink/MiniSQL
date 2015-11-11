@@ -95,4 +95,6 @@ void BufferManager::Terminate() {
     for(int i = 0; i < block_num_; i++)
         if(!block_info_[i].file_name.empty() && block_info_[i].is_modified)
             WriteFileBlock(block_info_[i].file_name, block_info_[i].file_block_num, i);
+    delete[] block_;
+    delete[] block_info_;
 }
