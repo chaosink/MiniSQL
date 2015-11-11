@@ -6,10 +6,10 @@
 using namespace std;
 
 struct AttributeInfo {
-	string name;
+    string name;
     int type;
-	int char_length;
-	bool is_unique;
+    int char_length;
+    bool is_unique;
 };
 
 struct Index {
@@ -18,15 +18,15 @@ struct Index {
 };
 
 struct TableInfo {
-	string table_name;
-	int attribute_num;
-	int index_num;
-	int record_num;
-	string primary_key;
-	int record_num_per_block;
-	int record_size;
-	int block_num;
-	vector<AttributeInfo> attribute_info;
+    string table_name;
+    int attribute_num;
+    int index_num;
+    int record_num;
+    string primary_key;
+    int record_num_per_block;
+    int record_size;
+    int block_num;
+    vector<AttributeInfo> attribute_info;
     vector<Index> index;
     TableInfo() {
         table_name = "";

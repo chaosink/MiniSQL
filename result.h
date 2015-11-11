@@ -12,46 +12,46 @@ struct Result {
 };
 
 struct ResultCreateTable : Result {
-	ResultCreateTable() {
-		type = CREATE_TABLE;
-	}
+    ResultCreateTable() {
+        type = CREATE_TABLE;
+    }
 };
 
 struct ResultDropTable : Result {
-	ResultDropTable() {
-		type = DROP_TABLE;
-	}
+    ResultDropTable() {
+        type = DROP_TABLE;
+    }
 };
 
 struct ResultCreateIndex : Result {
-	ResultCreateIndex() {
-		type = CREATE_INDEX;
-	}
+    ResultCreateIndex() {
+        type = CREATE_INDEX;
+    }
 };
 
 struct ResultDropIndex : Result {
-	ResultDropIndex() {
-		type = DROP_INDEX;
-	}
+    ResultDropIndex() {
+        type = DROP_INDEX;
+    }
 };
 
 struct ResultSelect : Result {
-	vector<string> attribute_name;
+    vector<string> attribute_name;
     vector<vector<string> > record;
-	ResultSelect() {
-		type = SELECT;
-	}
+    ResultSelect() {
+        type = SELECT;
+    }
 };
 
 struct ResultInset : Result {
-	ResultInset() {
-		type = INSERT;
-	}
+    ResultInset() {
+        type = INSERT;
+    }
 };
 
 struct ResultDelete : Result {
-	ResultDelete() {
-		type = DELETE;
-	}
+    ResultDelete() {
+        type = DELETE;
+    }
 };
 #endif // RESULT_H
