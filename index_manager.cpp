@@ -191,7 +191,10 @@ void IndexManager::InsertAllIndex(TableInfo *table_info, string index_name) {
                     if(block[j * table_info->record_size]) {
                         char s[256] = {0};
                         memcpy(s, block + j * table_info->record_size + offset, index_info->char_length);
+                        if(buffer_manager_->block_num() != 2) buffer_manager_->Pin(block);
                         b_plus_tree.Insert(String256(s), Pointer(i, j * table_info->record_size));
+                        if(buffer_manager_->block_num() == 2) block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
+                        else buffer_manager_->Unpin(block);
                     }
             }
         } else {
@@ -202,7 +205,10 @@ void IndexManager::InsertAllIndex(TableInfo *table_info, string index_name) {
                     if(block[j * table_info->record_size]) {
                         char s[128] = {0};
                         memcpy(s, block + j * table_info->record_size + offset, index_info->char_length);
+                        if(buffer_manager_->block_num() != 2) buffer_manager_->Pin(block);
                         b_plus_tree.Insert(String128(s), Pointer(i, j * table_info->record_size));
+                        if(buffer_manager_->block_num() == 2) block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
+                        else buffer_manager_->Unpin(block);
                     }
             }
         }
@@ -223,8 +229,12 @@ void IndexManager::InsertAllIndex(TableInfo *table_info, string index_name) {
         for(int i = 0; i < table_info->block_num; i++) {
             char *block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
             for(int j = 0; j < table_info->record_num_per_block; j++)
-                if(block[j * table_info->record_size])
+                if(block[j * table_info->record_size]) {
+                    if(buffer_manager_->block_num() != 2) buffer_manager_->Pin(block);
                     b_plus_tree.Insert(*(float *)(block + j * table_info->record_size + offset), Pointer(i, j * table_info->record_size));
+                    if(buffer_manager_->block_num() == 2) block = buffer_manager_->GetFileBlock(table_info->table_name + ".db", i);
+                    else buffer_manager_->Unpin(block);
+                }
         }
     }
     UpdateIndexInfo(index_info);
