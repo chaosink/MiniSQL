@@ -54,4 +54,5 @@ struct ResultDelete : Result {
         type = DELETE;
     }
 };
+
 #endif // RESULT_H
