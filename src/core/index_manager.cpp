@@ -1,5 +1,5 @@
-#include "b_plus_tree.h"
-#include "index_manager.h"
+#include "b_plus_tree.hpp"
+#include "index_manager.hpp"
 #include <fstream>
 #include <cstdlib>
 #include <algorithm>

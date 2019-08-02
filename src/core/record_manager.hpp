@@ -1,11 +1,11 @@
 #ifndef RECORDMANAGER_H
 #define RECORDMANAGER_H
 
-#include "buffer_manager.h"
-#include "value_pointer.h"
-#include "result.h"
-#include "table.h"
-#include "query.h"
+#include "buffer_manager.hpp"
+#include "value_pointer.hpp"
+#include "result.hpp"
+#include "table.hpp"
+#include "query.hpp"
 
 class RecordManager {
     BufferManager *buffer_manager_;

@@ -1,8 +1,8 @@
 #ifndef B_PLUS_TREE_HPP
 #define B_PLUS_TREE_HPP
 
-#include "index_manager.h"
-#include "buffer_manager.h"
+#include "index_manager.hpp"
+#include "buffer_manager.hpp"
 #include <fstream>
 #include <vector>
 //#include <iostream> // To use cerr

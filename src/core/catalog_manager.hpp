@@ -1,9 +1,9 @@
 #ifndef CATALOGMANAGER_H
 #define CATALOGMANAGER_H
 
-#include "buffer_manager.h"
-#include "table.h"
-#include "query.h"
+#include "buffer_manager.hpp"
+#include "table.hpp"
+#include "query.hpp"
 #include <map>
 
 class CatalogManager {

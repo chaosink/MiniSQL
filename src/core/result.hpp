@@ -1,7 +1,7 @@
 #ifndef RESULT_H
 #define RESULT_H
 
-#include "query.h"
+#include "query.hpp"
 #include <string>
 using namespace std;
 

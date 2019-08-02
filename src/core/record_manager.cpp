@@ -1,7 +1,7 @@
-#include "record_manager.h"
-#include "result.h"
-#include "table.h"
-#include "query.h"
+#include "record_manager.hpp"
+#include "result.hpp"
+#include "table.hpp"
+#include "query.hpp"
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>

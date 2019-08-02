@@ -1,9 +1,9 @@
 #ifndef API_H
 #define API_H
 
-#include "record_manager.h"
-#include "index_manager.h"
-#include "catalog_manager.h"
+#include "record_manager.hpp"
+#include "index_manager.hpp"
+#include "catalog_manager.hpp"
 
 class API {
     RecordManager *record_manager_;

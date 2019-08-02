@@ -1,10 +1,10 @@
-#include "api.h"
-#include "record_manager.h"
-#include "index_manager.h"
-#include "catalog_manager.h"
-#include "result.h"
-#include "table.h"
-#include "query.h"
+#include "api.hpp"
+#include "record_manager.hpp"
+#include "index_manager.hpp"
+#include "catalog_manager.hpp"
+#include "result.hpp"
+#include "table.hpp"
+#include "query.hpp"
 #include <cstdio>
 #include <algorithm>
 using namespace std;

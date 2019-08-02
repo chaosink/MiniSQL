@@ -1,8 +1,8 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "api.h"
-#include "query.h"
+#include "api.hpp"
+#include "query.hpp"
 #include <string>
 using namespace std;
 

@@ -1,12 +1,12 @@
 #ifndef DBMS_H
 #define DBMS_H
 
-#include "interpreter.h"
-#include "api.h"
-#include "record_manager.h"
-#include "index_manager.h"
-#include "catalog_manager.h"
-#include "buffer_manager.h"
+#include "interpreter.hpp"
+#include "api.hpp"
+#include "record_manager.hpp"
+#include "index_manager.hpp"
+#include "catalog_manager.hpp"
+#include "buffer_manager.hpp"
 
 #define _DBMS_INFORMATION "Welcome to MiniSQL!\nVersion: 0.1\n\n"
 

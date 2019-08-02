@@ -1,7 +1,7 @@
-#include "interpreter.h"
-#include "api.h"
-#include "result.h"
-#include "query.h"
+#include "interpreter.hpp"
+#include "api.hpp"
+#include "result.hpp"
+#include "query.hpp"
 #include <string>
 #include <iomanip>
 #include <iostream>

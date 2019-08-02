@@ -1,10 +1,10 @@
 #ifndef INDEXMANAGER_H
 #define INDEXMANAGER_H
 
-#include "buffer_manager.h"
-#include "value_pointer.h"
-#include "table.h"
-#include "query.h"
+#include "buffer_manager.hpp"
+#include "value_pointer.hpp"
+#include "table.hpp"
+#include "query.hpp"
 #include <string>
 #include <map>
 using namespace std;

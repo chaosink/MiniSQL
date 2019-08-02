@@ -1,5 +1,5 @@
-#include "buffer_manager.h"
-#include "catalog_manager.h"
+#include "buffer_manager.hpp"
+#include "catalog_manager.hpp"
 #include <fstream>
 #include <iostream>
 using namespace std;

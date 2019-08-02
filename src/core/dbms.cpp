@@ -1,10 +1,10 @@
-#include "dbms.h"
-#include "interpreter.h"
-#include "api.h"
-#include "record_manager.h"
-#include "index_manager.h"
-#include "catalog_manager.h"
-#include "buffer_manager.h"
+#include "dbms.hpp"
+#include "interpreter.hpp"
+#include "api.hpp"
+#include "record_manager.hpp"
+#include "index_manager.hpp"
+#include "catalog_manager.hpp"
+#include "buffer_manager.hpp"
 
 DBMS::DBMS() {
     DBMS_INFORMATION = _DBMS_INFORMATION;
